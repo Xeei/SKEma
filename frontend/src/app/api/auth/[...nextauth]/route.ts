@@ -77,6 +77,8 @@ const handler = NextAuth({
 				session.backendToken =
 					typeof token.backendToken === 'string' ? token.backendToken : undefined;
 				session.userId = typeof token.userId === 'string' ? token.userId : undefined;
+				// Set user.id from token
+				session.user.id = typeof token.userId === 'string' ? token.userId : token.sub || '';
 			}
 			return session;
 		},

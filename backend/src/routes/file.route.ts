@@ -7,6 +7,7 @@ import {
 	getFileByIdController,
 	downloadFileController,
 	deleteFileController,
+	getFilesByUserController,
 } from '../controllers/file.controller';
 
 const router = express.Router();
@@ -16,6 +17,9 @@ router.post('/', authMiddleware, upload.single('file'), uploadFileController);
 
 // Get all files
 router.get('/', getAllFilesController);
+
+// Get files by user ID
+router.get('/user/:userId', getFilesByUserController);
 
 // Get file by ID
 router.get('/:id', getFileByIdController);

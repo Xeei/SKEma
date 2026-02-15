@@ -62,6 +62,13 @@ export const getAllFiles = async (): Promise<FileData[]> => {
 	return response.data;
 };
 
+// Get files by user ID
+export const getUserFiles = async (userId: string): Promise<FileData[]> => {
+	const serverInstance = getServerInstance();
+	const response = await serverInstance.get(`/user/${userId}`);
+	return response.data;
+};
+
 // Get file by ID
 export const getFileById = async (id: string): Promise<FileData> => {
 	const serverInstance = getServerInstance();

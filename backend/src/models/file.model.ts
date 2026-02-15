@@ -98,6 +98,6 @@ export const getFilesByUser = async (
     `;
 
 	const values = [userId];
-	const result = await pool.query(queryText);
+	const result = await pool.query(queryText, values);
 	return result.rows;
 };
