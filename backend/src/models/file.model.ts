@@ -12,6 +12,7 @@ export interface FileMetadata {
 	downloads: number;
 	createdAt: Date;
 	updatedAt: Date;
+	folderId?: string;
 }
 
 export const createFile = async (

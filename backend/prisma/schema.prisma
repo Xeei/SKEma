@@ -6,31 +6,91 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+enum PrivacyLevel {
+  PUBLIC
+  PRIVATE
+  SHARED
+}
+
+enum RoleLevel {
+  STANDARD
+  ADMIN
+  TESTER
+}
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String?
-  role         String?
-  createdAt    DateTime      @default(now())
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
   updatedAt    DateTime      @updatedAt
-  files        File[]
+  role      RoleLevel @default(STANDARD)
+
+  files     File[]   @relation("FileOwner")
+  sharedFiles FileShare[]
+  folders FileFolder[]
 
   @@map("users")
 }
 
+model FileFolder {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship to Owner
+  userId    String
+  owner     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // --- Recursive Relationship for Nested Folders ---
+  parentId  String?  // If null, it's a root folder
+  parent    FileFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  FileFolder[] @relation("FolderHierarchy")
+
+  files     File[]
+
+  @@map("file_folders")
+}
+
 model File {
-  id            String   @id @default(cuid())
-  filename      String   // Stored filename (UUID-based)
-  originalName  String   // User's original filename
-  mimetype      String
-  size          Int      // File size in bytes
-  path          String   // Full path to file
-  uploadedBy    String
-  user          User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
-  downloads     Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String       @id @default(cuid())
+  filename     String
+  originalName String
+  mimetype     String
+  size         Int
+  path         String
+  downloads    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // New privacy field using Enum
+  privacy      PrivacyLevel @default(PRIVATE)
+
+  // Owner relationship
+  uploadedBy   String
+  owner        User         @relation("FileOwner", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  
+  // Relationship for "Shared" files
+  sharedWith   FileShare[]
+
+  folderId  String?
+  folder    FileFolder? @relation(fields: [folderId], references: [id])
 
   @@map("files")
+}
+
+model FileShare {
+  id        String   @id @default(cuid())
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sharedAt  DateTime @default(now())
+
+  // Ensure a user cannot be granted access to the same file twice
+  @@unique([fileId, userId])
+  @@map("file_shares")
 }
