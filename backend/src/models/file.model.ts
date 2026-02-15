@@ -102,3 +102,36 @@ export const getFilesByUser = async (
 	const result = await pool.query(queryText, values);
 	return result.rows;
 };
+
+export const getPublicFilesByFolder = async (
+	userId: string,
+	folderId: string,
+): Promise<FileMetadata[]> => {
+	const pool: Pool = await getDbConnection();
+	const queryText = `
+		SELECT
+		f.*,
+		u.name AS uploader_name,
+		u.email AS uploader_email,
+		'PUBLIC' AS access_type
+		FROM files f
+		JOIN users u ON f."uploadedBy" = u.id
+		WHERE f.privacy = 'PUBLIC'
+
+		UNION
+
+		SELECT
+		f.*,
+		u.name AS uploader_name,
+		u.email AS uploader_email,
+		'SHARED' AS access_type
+		FROM files f
+		JOIN file_shares fs ON fs."fileId" = f.id
+		JOIN users u ON f."uploadedBy" = u.id
+		WHERE fs."userId" = $1
+		AND fs.id = $2;
+    `;
+	const values = [userId, folderId];
+	const result = await pool.query(queryText, values);
+	return result.rows;
+};

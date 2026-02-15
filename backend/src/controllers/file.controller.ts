@@ -6,6 +6,7 @@ import {
 	incrementDownloadCount,
 	deleteFile as deleteFileModel,
 	getFilesByUser,
+	getPublicFilesByFolder,
 } from '../models/file.model';
 import fs from 'fs';
 import path from 'path';
@@ -206,6 +207,21 @@ export const getFilesByUserController = async (
 	try {
 		const userId = req.params.userId as string;
 		const files = await getFilesByUser(userId);
+		res.status(200).json(files);
+	} catch (error) {
+		console.error('Error fetching user files:', error);
+		res.status(500).json({ error: 'Failed to fetch user files' });
+	}
+};
+
+export const getFilesByFolder = async (
+	req: Request,
+	res: Response
+): Promise<void> => {
+	try {
+		const userId = req.params.userId as string;
+		const folderId = req.params.folderId as string;
+		const files = await getPublicFilesByFolder(userId, folderId);
 		res.status(200).json(files);
 	} catch (error) {
 		console.error('Error fetching user files:', error);

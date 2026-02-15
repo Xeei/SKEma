@@ -84,3 +84,4 @@ export const deleteFolderController = async (req: Request, res: Response) => {
 		res.status(500).json({ error: 'Failed to delete folder' });
 	}
 };
+

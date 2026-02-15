@@ -176,6 +176,20 @@ export default function LibraryPage() {
 					</Card>
 				</div>
 
+				{/* Search Public Folders Button */}
+				<div className="flex justify-center my-6">
+					<Card
+						className="w-full max-w-full bg-white border-2 text-[#006837] hover:bg-slate-50 rounded-2xl shadow-lg cursor-pointer transition-colors"
+						onClick={() => router.push('/library/folders')}
+					>
+						<CardHeader className="flex flex-row items-center justify-between p-6">
+							<div className="text-xl font-bold">ค้นหาโฟลเดอร์สาธารณะ</div>
+							<div className="text-sm font-medium text-muted-foreground">Search Public Folders</div>
+						</CardHeader>
+						{/* Removed CardContent as it wasn't used */}
+					</Card>
+				</div>
+
 				{/* Search Bar */}
 				<Card>
 					<CardContent className="pt-6">

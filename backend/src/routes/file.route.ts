@@ -8,6 +8,7 @@ import {
 	downloadFileController,
 	deleteFileController,
 	getFilesByUserController,
+	getFilesByFolder,
 } from '../controllers/file.controller';
 
 const router = express.Router();
@@ -29,5 +30,7 @@ router.get('/:id/download', downloadFileController);
 
 // Delete file (requires authentication and ownership)
 router.delete('/:id', authMiddleware, deleteFileController);
+
+router.get('/folders/:id', authMiddleware, getFilesByFolder)
 
 export default router;

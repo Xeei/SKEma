@@ -9,6 +9,8 @@ import { authMiddleware } from './middleware/auth.middleware';
 
 import userRouter from './routes/user.route';
 import fileRouter from './routes/file.route';
+import folderRoute from './routes/folder.route'
+import fileshareRouter from './routes/fileshare.route'
 
 // Initialize Express app
 const app: Express = express();
@@ -74,6 +76,8 @@ function configureRoutes(app: Express): void {
 	// routes
 	apiV1Router.use('/user', userRouter);
 	apiV1Router.use('/files', fileRouter);
+	apiV1Router.use('/folders', folderRoute)
+	apiV1Router.use('/fileshare', fileshareRouter)
 
 	// Mount v1 API router
 	app.use('/api/v1', apiV1Router);
