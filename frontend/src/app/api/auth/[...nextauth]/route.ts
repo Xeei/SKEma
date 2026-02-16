@@ -35,6 +35,7 @@ const handler = NextAuth({
 							id: user.id || profile?.sub || '',
 							email: user.email,
 							name: user.name || null,
+							role: user.role || null,
 						};
 
 						await createUser(payload);
@@ -52,6 +53,7 @@ const handler = NextAuth({
 			if (account && user && user.email) {
 				const dbUser = await getUserByEmail(user.email);
 				const userId = dbUser?.id || user.id || token.sub;
+				const role = dbUser?.role || user.role || undefined;
 
 				const secret = process.env.NEXTAUTH_SECRET!;
 				const backendToken = jwt.sign(
@@ -59,6 +61,7 @@ const handler = NextAuth({
 						sub: userId,
 						email: user.email,
 						name: user.name,
+						role: role,
 					},
 					secret,
 					{ expiresIn: '7d' }
@@ -67,7 +70,8 @@ const handler = NextAuth({
 					...token,
 					backendToken,
 					userId,
-				};
+					role: role || undefined,
+				} as any;
 			}
 			return token;
 		},
@@ -77,6 +81,7 @@ const handler = NextAuth({
 				session.backendToken =
 					typeof token.backendToken === 'string' ? token.backendToken : undefined;
 				session.userId = typeof token.userId === 'string' ? token.userId : undefined;
+				session.role = typeof token.role === 'string' ? token.role : undefined;
 				// Set user.id from token
 				session.user.id = typeof token.userId === 'string' ? token.userId : token.sub || '';
 			}

@@ -109,13 +109,13 @@ export default function LibraryPage() {
 						</h1>
 						<p className="text-muted-foreground mt-1">Share and access study materials</p>
 					</div>
-					<Button
+					{/* <Button
 						onClick={() => setShowUpload(!showUpload)}
 						className="bg-[#006837] hover:bg-[#005530] gap-2"
 					>
 						<Upload className="w-4 h-4" />
 						{showUpload ? 'Hide Upload' : 'Upload File'}
-					</Button>
+					</Button> */}
 				</div>
 
 				{/* Upload Section */}

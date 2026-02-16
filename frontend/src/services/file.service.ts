@@ -17,6 +17,8 @@ export interface FileData {
 	uploaderName?: string;
 	uploaderEmail?: string;
 	downloads: number;
+	folderId?: string | null;
+	privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
 	createdAt: string;
 	updatedAt: string;
 }
@@ -30,11 +32,15 @@ export interface UploadProgress {
 // Upload file with progress tracking
 export const uploadFile = async (
 	file: File,
-	onProgress?: (progress: UploadProgress) => void
+	onProgress?: (progress: UploadProgress) => void,
+	folderId?: string | null,
+	privacy?: 'PUBLIC' | 'PRIVATE' | 'SHARED'
 ): Promise<FileData> => {
 	const serverInstance = getServerInstance();
 	const formData = new FormData();
 	formData.append('file', file);
+	if (folderId) formData.append('folderId', folderId);
+	if (privacy) formData.append('privacy', privacy);
 
 	const response = await serverInstance.post('', formData, {
 		headers: {

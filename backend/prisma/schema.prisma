@@ -29,6 +29,7 @@ model User {
   files     File[]   @relation("FileOwner")
   sharedFiles FileShare[]
   folders FileFolder[]
+  posts     Post[]   @relation("PostAuthor")
 
   @@map("users")
 }
@@ -77,6 +78,8 @@ model File {
   folderId  String?
   folder    FileFolder? @relation(fields: [folderId], references: [id])
 
+  postFiles PostFile[]
+
   @@map("files")
 }
 
@@ -93,4 +96,47 @@ model FileShare {
   // Ensure a user cannot be granted access to the same file twice
   @@unique([fileId, userId])
   @@map("file_shares")
+}
+
+model Post {
+  id          String       @id @default(cuid())
+  title       String
+  content     String       @db.Text
+  description String?
+  
+  // Author relationship
+  authorId    String
+  author      User         @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Many-to-many relationship with files
+  files       PostFile[]
+  
+  // Privacy and engagement
+  privacy     PrivacyLevel @default(PUBLIC)
+  views       Int          @default(0)
+  
+  // Categorization
+  category    String?
+  tags        String[]
+  
+  // Timestamps
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  @@map("posts")
+}
+
+model PostFile {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  fileId    String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  @@unique([postId, fileId])
+  @@map("post_files")
 }

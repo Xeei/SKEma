@@ -26,6 +26,11 @@ export const getFolderById = async (id: string): Promise<FileFolderData> => {
 	return data;
 };
 
+export const getAllFolders = async (): Promise<FileFolderData[]> => {
+	const { data } = await instance.get('/all');
+	return data;
+};
+
 export const getFoldersByUser = async (): Promise<FileFolderData[]> => {
 	const { data } = await instance.get('/');
 	return data;

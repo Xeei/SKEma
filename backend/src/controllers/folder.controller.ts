@@ -6,6 +6,7 @@ import {
 	getFoldersByParent,
 	updateFolder,
 	deleteFolder,
+	getAllFolders,
 } from '../models/folder.model';
 
 export const createFolderController = async (req: Request, res: Response) => {
@@ -31,6 +32,21 @@ export const getFolderByIdController = async (req: Request, res: Response) => {
 		res.status(500).json({ error: 'Failed to get folder' });
 	}
 };
+
+export const getAllFoldersController = async (
+	req: Request,
+	res: Response
+) => {
+	try {
+		const userId = req.user?.id;
+		if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+		const folders = await getAllFolders();
+		res.json(folders);
+	} catch (err) {
+		res.status(500).json({ error: 'Failed to get folders' });
+	}
+};
+
 
 export const getFoldersByUserController = async (
 	req: Request,

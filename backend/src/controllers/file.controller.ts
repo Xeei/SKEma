@@ -31,6 +31,9 @@ export const uploadFileController = async (
 			return;
 		}
 
+		// Get optional folderId and privacy from request body
+		const { folderId, privacy } = req.body;
+
 		// Save file metadata to database
 		const fileMetadata = await createFile(
 			req.file.filename,
@@ -38,7 +41,9 @@ export const uploadFileController = async (
 			req.file.mimetype,
 			req.file.size,
 			req.file.path,
-			userId
+			userId,
+			folderId,
+			privacy
 		);
 
 		res.status(201).json({

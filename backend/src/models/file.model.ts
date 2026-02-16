@@ -12,7 +12,8 @@ export interface FileMetadata {
 	downloads: number;
 	createdAt: Date;
 	updatedAt: Date;
-	folderId?: string;
+	folderId?: string | null;
+	privacy?: string;
 }
 
 export const createFile = async (
@@ -21,16 +22,27 @@ export const createFile = async (
 	mimetype: string,
 	size: number,
 	path: string,
-	uploadedBy: string
+	uploadedBy: string,
+	folderId?: string | null,
+	privacy?: string
 ): Promise<FileMetadata> => {
 	const pool: Pool = await getDbConnection();
 	const queryText = `
-        INSERT INTO files (id, filename, "originalName", mimetype, size, path, "uploadedBy", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW())
+        INSERT INTO files (id, filename, "originalName", mimetype, size, path, "uploadedBy", "folderId", privacy, "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING *;
     `;
 
-	const values = [filename, originalName, mimetype, size, path, uploadedBy];
+	const values = [
+		filename,
+		originalName,
+		mimetype,
+		size,
+		path,
+		uploadedBy,
+		folderId || null,
+		privacy || 'PRIVATE',
+	];
 	const result = await pool.query(queryText, values);
 	return result.rows[0];
 };
@@ -105,7 +117,7 @@ export const getFilesByUser = async (
 
 export const getPublicFilesByFolder = async (
 	userId: string,
-	folderId: string,
+	folderId: string
 ): Promise<FileMetadata[]> => {
 	const pool: Pool = await getDbConnection();
 	const queryText = `

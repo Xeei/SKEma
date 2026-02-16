@@ -37,6 +37,14 @@ export const getFolderById = async (
 	return result.rows[0] || null;
 };
 
+// Get All Folders
+export const getAllFolders = async (): Promise<FileFolderData[]> => {
+	const pool: Pool = await getDbConnection();
+	const query = `SELECT * FROM file_folders ORDER BY "createdAt" DESC`;
+	const result = await pool.query(query);
+	return result.rows;
+};
+
 // List all folders for a user
 export const getFoldersByUser = async (
 	userId: string
