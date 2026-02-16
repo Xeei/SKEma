@@ -14,7 +14,9 @@ import {
 	deleteFolder,
 } from '@/services/folder.service';
 import { getAllFiles, FileData, uploadFile, downloadFile } from '@/services/file.service';
-import { Download, Trash2 } from 'lucide-react';
+import { getPostsByFolder, PostData } from '@/services/post.service';
+import { Download, Trash2, FileText } from 'lucide-react';
+import { CreatePostDialog } from '@/components/CreatePostDialog';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -31,6 +33,7 @@ export default function FolderDetailPage() {
 	const [folder, setFolder] = useState<FileFolderData | null>(null);
 	const [subfolders, setSubfolders] = useState<FileFolderData[]>([]);
 	const [files, setFiles] = useState<FileData[]>([]);
+	const [posts, setPosts] = useState<PostData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [creating, setCreating] = useState(false);
 	const [uploading, setUploading] = useState(false);
@@ -42,6 +45,7 @@ export default function FolderDetailPage() {
 			loadFolder();
 			loadSubfolders();
 			loadFiles();
+			loadPosts();
 		}
 		// eslint-disable-next-line
 	}, [folderId]);
@@ -77,6 +81,15 @@ export default function FolderDetailPage() {
 			setFiles([]);
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const loadPosts = async () => {
+		try {
+			const data = await getPostsByFolder(folderId);
+			setPosts(data);
+		} catch (error) {
+			setPosts([]);
 		}
 	};
 
@@ -148,37 +161,44 @@ export default function FolderDetailPage() {
 	return (
 		<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
 			<div className="max-w-7xl mx-auto space-y-6">
-				<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>{folder.name}</h1>
+				<div className="flex items-center justify-between">
+					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
+						{folder.name}
+					</h1>
+					<CreatePostDialog
+						folderId={folderId}
+						onPostCreated={() => {
+							loadFiles();
+							loadPosts();
+						}}
+					/>
+				</div>
 
 				{session?.role === 'ADMIN' && (
-					<div>
-						{' '}
-						{/* Create Subfolder Section */}
-						<Card>
-							<CardHeader>
-								<CardTitle>Create Subfolder</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="flex items-center gap-2">
-									<input
-										type="text"
-										placeholder="Subfolder name"
-										className="border rounded px-3 py-2 flex-1"
-										value={newFolderName}
-										onChange={(e) => setNewFolderName(e.target.value)}
-										disabled={creating}
-									/>
-									<Button
-										className="bg-[#006837] hover:bg-[#005530]"
-										onClick={handleCreateSubfolder}
-										disabled={creating || !newFolderName.trim()}
-									>
-										{creating ? 'Creating...' : 'Create Subfolder'}
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-					</div>
+					<Card>
+						<CardHeader>
+							<CardTitle>Create Subfolder</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="flex items-center gap-2">
+								<input
+									type="text"
+									placeholder="Subfolder name"
+									className="border rounded px-3 py-2 flex-1"
+									value={newFolderName}
+									onChange={(e) => setNewFolderName(e.target.value)}
+									disabled={creating}
+								/>
+								<Button
+									className="bg-[#006837] hover:bg-[#005530]"
+									onClick={handleCreateSubfolder}
+									disabled={creating || !newFolderName.trim()}
+								>
+									{creating ? 'Creating...' : 'Create Subfolder'}
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 				)}
 
 				{/* Subfolders Section */}
@@ -249,6 +269,66 @@ export default function FolderDetailPage() {
 								{uploading ? 'Uploading...' : 'Upload File'}
 							</Button>
 						</div>
+					</CardContent>
+				</Card>
+
+				{/* Posts Section */}
+				<Card>
+					<CardHeader>
+						<CardTitle>Posts in this Folder</CardTitle>
+						<CardDescription>Guides and posts associated with this folder</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{loading ? (
+							<div className="flex items-center justify-center py-12">
+								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
+							</div>
+						) : posts.length === 0 ? (
+							<div className="text-center py-12 text-muted-foreground">
+								No posts in this folder yet.
+							</div>
+						) : (
+							<div className="space-y-3">
+								{posts.map((post) => (
+									<Card
+										key={post.id}
+										className="cursor-pointer hover:shadow-lg transition-shadow p-4"
+										onClick={() => router.push(`/library/post/${post.id}`)}
+									>
+										<div className="flex items-start gap-3">
+											<FileText className="w-5 h-5 text-[#006837] mt-1" />
+											<div className="flex-1">
+												<h3 className="font-semibold text-lg text-[#006837]">{post.title}</h3>
+												{post.description && (
+													<p className="text-sm text-muted-foreground mt-1">{post.description}</p>
+												)}
+												<div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+													<span>By: {post.authorName || post.authorEmail}</span>
+													<span>•</span>
+													<span>{new Date(post.createdAt).toLocaleDateString()}</span>
+													{post.category && (
+														<>
+															<span>•</span>
+															<span className="bg-[#006837] text-white px-2 py-1 rounded">
+																{post.category}
+															</span>
+														</>
+													)}
+													{post.fileCount && post.fileCount > 0 && (
+														<>
+															<span>•</span>
+															<span>
+																{post.fileCount} file{post.fileCount > 1 ? 's' : ''}
+															</span>
+														</>
+													)}
+												</div>
+											</div>
+										</div>
+									</Card>
+								))}
+							</div>
+						)}
 					</CardContent>
 				</Card>
 

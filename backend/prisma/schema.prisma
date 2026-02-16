@@ -50,6 +50,7 @@ model FileFolder {
   children  FileFolder[] @relation("FolderHierarchy")
 
   files     File[]
+  posts     Post[]
 
   @@map("file_folders")
 }
@@ -118,6 +119,10 @@ model Post {
   // Categorization
   category    String?
   tags        String[]
+  
+  // Folder relationship
+  folderId    String?
+  folder      FileFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   
   // Timestamps
   createdAt   DateTime     @default(now())

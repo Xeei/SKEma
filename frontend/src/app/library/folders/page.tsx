@@ -15,6 +15,7 @@ import {
 } from '@/services/folder.service';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
+import { CreatePostDialog } from '@/components/CreatePostDialog';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -76,34 +77,42 @@ export default function PublicFoldersPage() {
 	return (
 		<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
 			<div className="max-w-7xl mx-auto space-y-6">
-				<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>Public Folders</h1>
+				<div className="flex items-center justify-between">
+					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
+						Public Folders
+					</h1>
+					<CreatePostDialog onPostCreated={loadFolders} />
+				</div>
 				{loading ? (
 					<div className="flex items-center justify-center py-12">
 						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]" />
 					</div>
 				) : (
 					<div>
-						<div className="flex items-center gap-2 mb-4 w-[50%]">
-							<Input
-								type="text"
-								placeholder="New folder name"
-								className="border rounded px-2 py-1"
-								value={newFolderName}
-								onChange={(e) => setNewFolderName(e.target.value)}
-								disabled={creating}
-							/>
-							<Button
-								className="bg-[#006837] hover:bg-[#005530] gap-2"
-								onClick={() => {
-									if (newFolderName.trim()) {
-										createFolders(newFolderName.trim(), '');
-									}
-								}}
-								disabled={creating || !newFolderName.trim()}
-							>
-								{creating ? 'Creating...' : 'Create New Folder'}
-							</Button>
-						</div>
+						{session?.role === 'ADMIN' && (
+							<div className="flex items-center gap-2 mb-4 w-[50%]">
+								<Input
+									type="text"
+									placeholder="New folder name"
+									className="border rounded px-2 py-1"
+									value={newFolderName}
+									onChange={(e) => setNewFolderName(e.target.value)}
+									disabled={creating}
+								/>
+								<Button
+									className="bg-[#006837] hover:bg-[#005530] gap-2"
+									onClick={() => {
+										if (newFolderName.trim()) {
+											createFolders(newFolderName.trim(), '');
+										}
+									}}
+									disabled={creating || !newFolderName.trim()}
+								>
+									{creating ? 'Creating...' : 'Create New Folder'}
+								</Button>
+							</div>
+						)}
+
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 							{folders.map((folder) => (
 								<Card
