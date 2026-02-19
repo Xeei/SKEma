@@ -27,6 +27,7 @@ export const createPostController = async (req: Request, res: Response) => {
 			category,
 			tags,
 			folderId,
+			isAnonymous,
 		} = req.body;
 		const authorId = req.user?.id;
 
@@ -43,7 +44,8 @@ export const createPostController = async (req: Request, res: Response) => {
 			privacy,
 			category,
 			tags,
-			folderId
+			folderId,
+			isAnonymous ?? false
 		);
 
 		res.status(201).json(post);

@@ -31,6 +31,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 	const [category, setCategory] = useState('');
 	const [tags, setTags] = useState('');
 	const [privacy, setPrivacy] = useState<'PUBLIC' | 'PRIVATE' | 'SHARED'>('PUBLIC');
+	const [isAnonymous, setIsAnonymous] = useState(false);
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -55,6 +56,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 					.filter((t) => t.length > 0),
 				privacy,
 				folderId,
+				isAnonymous,
 			});
 
 			// Upload and attach files
@@ -74,6 +76,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 			setCategory('');
 			setTags('');
 			setPrivacy('PUBLIC');
+			setIsAnonymous(false);
 			setSelectedFiles([]);
 			setOpen(false);
 
@@ -185,6 +188,23 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 								<option value="SHARED">Shared</option>
 							</select>
 						</div>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							id="isAnonymous"
+							checked={isAnonymous}
+							onChange={(e) => setIsAnonymous(e.target.checked)}
+							disabled={loading}
+							className="w-4 h-4 accent-[#006837] cursor-pointer"
+						/>
+						<label htmlFor="isAnonymous" className="text-sm font-medium cursor-pointer select-none">
+							Post anonymously{' '}
+							<span className="text-muted-foreground font-normal">
+								(your name will not be shown)
+							</span>
+						</label>
 					</div>
 
 					<div>

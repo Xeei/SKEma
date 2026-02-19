@@ -64,6 +64,10 @@ export default function SignInPage() {
 						<p className={`${sarabun.className} text-center text-sm text-muted-foreground pt-2`}>
 							สำหรับนักศึกษา SKE มหาวิทยาลัยเกษตรศาสตร์
 						</p>
+						<p className="text-center text-xs text-muted-foreground">
+							Only <span className="font-semibold text-[#006837]">@ku.th</span> email addresses are
+							permitted to sign in.
+						</p>
 					</CardContent>
 				</Card>
 			</div>

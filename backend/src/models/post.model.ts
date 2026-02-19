@@ -13,6 +13,7 @@ export interface PostMetadata {
 	category?: string | null;
 	tags: string[];
 	folderId?: string | null;
+	isAnonymous: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 	authorName?: string;
@@ -55,12 +56,13 @@ export const createPost = async (
 	privacy?: string,
 	category?: string | null,
 	tags?: string[],
-	folderId?: string | null
+	folderId?: string | null,
+	isAnonymous?: boolean
 ): Promise<PostMetadata> => {
 	const pool: Pool = await getDbConnection();
 	const queryText = `
-        INSERT INTO posts (id, title, content, description, link, "authorId", privacy, category, tags, "folderId", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        INSERT INTO posts (id, title, content, description, link, "authorId", privacy, category, tags, "folderId", "isAnonymous", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING *;
     `;
 
@@ -74,6 +76,7 @@ export const createPost = async (
 		category || null,
 		tags || [],
 		folderId || null,
+		isAnonymous ?? false,
 	];
 	const result = await pool.query(queryText, values);
 	return result.rows[0];
@@ -95,8 +98,8 @@ export const getAllPosts = async (
 	const queryText = `
         SELECT 
             p.*,
-            u.name as "authorName",
-            u.email as "authorEmail",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
             COUNT(pf.id)::int as "fileCount"
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
@@ -127,8 +130,8 @@ export const getPostById = async (id: string): Promise<PostMetadata | null> => {
 	const queryText = `
         SELECT 
             p.*,
-            u.name as "authorName",
-            u.email as "authorEmail",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
             COUNT(pf.id)::int as "fileCount"
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
@@ -149,8 +152,8 @@ export const getPostsByAuthor = async (
 	const queryText = `
         SELECT 
             p.*,
-            u.name as "authorName",
-            u.email as "authorEmail",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
             COUNT(pf.id)::int as "fileCount"
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
@@ -181,8 +184,8 @@ export const getPublicPosts = async (
 	const queryText = `
         SELECT 
             p.*,
-            u.name as "authorName",
-            u.email as "authorEmail",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
             COUNT(pf.id)::int as "fileCount"
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
@@ -391,8 +394,8 @@ export const getPostsByFolder = async (
 	const queryText = `
         SELECT 
             p.*,
-            u.name as "authorName",
-            u.email as "authorEmail",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
             COUNT(pf.id)::int as "fileCount"
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id

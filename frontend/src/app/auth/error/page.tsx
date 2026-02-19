@@ -22,7 +22,7 @@ export default function AuthErrorPage() {
 			case 'Configuration':
 				return 'There is a problem with the server configuration.';
 			case 'AccessDenied':
-				return 'Access denied. You do not have permission to sign in.';
+				return 'Access denied. Only @ku.th email addresses are allowed to sign in. If you believe you should have access, please contact the administrator.';
 			case 'Verification':
 				return 'The verification token has expired or has already been used.';
 			case 'OAuthSignin':

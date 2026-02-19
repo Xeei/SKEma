@@ -27,6 +27,23 @@ const handler = NextAuth({
 	callbacks: {
 		async signIn({ user, account, profile }) {
 			if (account?.provider === 'google' && user.email) {
+				// Check if the email is allowed:
+				// 1. KU email domain (@ku.th)
+				// 2. Or listed in ALLOWED_EMAILS env var (comma-separated)
+				const email = user.email.toLowerCase();
+				const isKuEmail = email.endsWith('@ku.th');
+
+				const allowedEmails = (process.env.ALLOWED_EMAILS ?? '')
+					.split(',')
+					.map((e) => e.trim().toLowerCase())
+					.filter(Boolean);
+				const isCustomAllowed = allowedEmails.includes(email);
+
+				if (!isKuEmail && !isCustomAllowed) {
+					console.warn(`Sign-in blocked for non-KU email: ${email}`);
+					return false;
+				}
+
 				try {
 					const existingUser = await getUserByEmail(user.email);
 

@@ -58,7 +58,7 @@ export function EditFolderDialog({ folder, onFolderUpdated }: EditFolderDialogPr
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-2">
+				<Button variant="secondary" size="sm" className="gap-2">
 					<Edit className="w-4 h-4" />
 					Edit Folder
 				</Button>

@@ -114,6 +114,9 @@ model Post {
   // Many-to-many relationship with files
   files       PostFile[]
   
+  // Anonymous posting
+  isAnonymous Boolean      @default(false)
+
   // Privacy and engagement
   privacy     PrivacyLevel @default(PUBLIC)
   views       Int          @default(0)

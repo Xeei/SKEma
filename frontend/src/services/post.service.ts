@@ -21,6 +21,7 @@ export interface PostData {
 	authorEmail?: string;
 	fileCount?: number;
 	folderId?: string | null;
+	isAnonymous: boolean;
 }
 
 export interface PostFileData {
@@ -44,6 +45,7 @@ export interface CreatePostPayload {
 	category?: string;
 	tags?: string[];
 	folderId?: string;
+	isAnonymous?: boolean;
 }
 
 export interface PaginationMetadata {

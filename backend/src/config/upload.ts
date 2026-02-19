@@ -39,12 +39,27 @@ const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.
 		'image/gif',
 		'image/webp',
 		'text/plain',
+		// Python
+		'text/x-python',
+		'text/x-python-script',
+		'application/x-python-code',
+		// CSV
+		'text/csv',
+		// C / C++
+		'text/x-c',
+		'text/x-csrc',
+		'text/x-chdr',
+		'text/x-c++src',
+		'text/x-c++hdr',
+		// Assembly
+		'text/x-asm',
+		'text/x-assembler',
 	];
 
 	if (allowedMimes.includes(file.mimetype)) {
 		cb(null, true);
 	} else {
-		cb(new Error('Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, and images are allowed.'));
+		cb(new Error('Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, images, Python, CSV, C, and Assembly files are allowed.'));
 	}
 };
 
