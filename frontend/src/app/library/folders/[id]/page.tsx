@@ -355,9 +355,32 @@ export default function FolderDetailPage() {
 															{subfolder.description}
 														</p>
 													)}
-													<div className="mt-4 flex items-center gap-1.5 text-gray-400">
-														<FolderOpen className="w-3.5 h-3.5" />
-														<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
+													<div className="mt-4">
+														{((subfolder.subfolderCount ?? 0) > 0 ||
+															(subfolder.postCount ?? 0) > 0 ||
+															(subfolder.fileCount ?? 0) > 0) && (
+															<div className="flex items-center gap-2 mb-2 flex-wrap">
+																{(subfolder.subfolderCount ?? 0) > 0 && (
+																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																		{subfolder.subfolderCount} โฟลเดอร์
+																	</span>
+																)}
+																{(subfolder.postCount ?? 0) > 0 && (
+																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																		{subfolder.postCount} โพสต์
+																	</span>
+																)}
+																{(subfolder.fileCount ?? 0) > 0 && (
+																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																		{subfolder.fileCount} ไฟล์
+																	</span>
+																)}
+															</div>
+														)}
+														<div className="flex items-center gap-1.5 text-gray-400">
+															<FolderOpen className="w-3.5 h-3.5" />
+															<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
+														</div>
 													</div>
 												</div>
 											);
@@ -451,7 +474,7 @@ export default function FolderDetailPage() {
 																</span>
 															</>
 														)}
-														{post.fileCount && post.fileCount > 0 && (
+														{(post.fileCount ?? 0) > 0 && (
 															<>
 																<span className="text-gray-200">•</span>
 																<span className="font-sarabun text-xs text-gray-400">

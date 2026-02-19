@@ -22,7 +22,11 @@ const storage = multer.diskStorage({
 });
 
 // File filter - only allow certain file types
-const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (
+	req: Express.Request,
+	file: Express.Multer.File,
+	cb: multer.FileFilterCallback
+) => {
 	// Allowed file types
 	const allowedMimes = [
 		'application/pdf',
@@ -59,7 +63,11 @@ const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.
 	if (allowedMimes.includes(file.mimetype)) {
 		cb(null, true);
 	} else {
-		cb(new Error('Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, images, Python, CSV, C, and Assembly files are allowed.'));
+		cb(
+			new Error(
+				'Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, images, Python, CSV, C, and Assembly files are allowed.'
+			)
+		);
 	}
 };
 

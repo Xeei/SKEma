@@ -176,9 +176,32 @@ export default function Home() {
 														{subject.description}
 													</p>
 												)}
-												<div className="mt-4 flex items-center gap-1.5 text-gray-400">
-													<FolderOpen className="w-3.5 h-3.5" />
-													<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
+												<div className="mt-4">
+													{((subject.subfolderCount ?? 0) > 0 ||
+														(subject.postCount ?? 0) > 0 ||
+														(subject.fileCount ?? 0) > 0) && (
+														<div className="flex items-center gap-2 mb-2 flex-wrap">
+															{(subject.subfolderCount ?? 0) > 0 && (
+																<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																	{subject.subfolderCount} โฟลเดอร์
+																</span>
+															)}
+															{(subject.postCount ?? 0) > 0 && (
+																<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																	{subject.postCount} โพสต์
+																</span>
+															)}
+															{(subject.fileCount ?? 0) > 0 && (
+																<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
+																	{subject.fileCount} ไฟล์
+																</span>
+															)}
+														</div>
+													)}
+													<div className="flex items-center gap-1.5 text-gray-400">
+														<FolderOpen className="w-3.5 h-3.5" />
+														<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
+													</div>
 												</div>
 											</div>
 										))}

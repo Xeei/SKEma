@@ -12,6 +12,9 @@ export interface FileFolderData {
 	updatedAt: string;
 	userId: string;
 	parentId: string | null;
+	fileCount?: number;
+	postCount?: number;
+	subfolderCount?: number;
 }
 
 export interface PaginationMetadata {

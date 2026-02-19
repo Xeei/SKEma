@@ -9,6 +9,9 @@ export interface FileFolderData {
 	updatedAt: Date;
 	userId: string;
 	parentId: string;
+	fileCount?: number;
+	postCount?: number;
+	subfolderCount?: number;
 }
 
 export interface PaginationMetadata {
@@ -62,12 +65,46 @@ export const getAllFolders = async (
 	const offset = (page - 1) * limit;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders`;
+	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" IS NULL`;
 	const countResult = await pool.query(countQuery);
 	const total = countResult.rows[0].count;
 
-	// Get paginated data
-	const query = `SELECT * FROM file_folders WHERE "parentId" is null ORDER BY "createdAt" DESC LIMIT $1 OFFSET $2`;
+	// Get paginated data with recursive file/post/subfolder counts
+	const query = `
+		WITH RECURSIVE all_subfolders AS (
+			SELECT id, id AS root_id FROM file_folders WHERE "parentId" IS NULL
+			UNION ALL
+			SELECT f.id, s.root_id FROM file_folders f
+			INNER JOIN all_subfolders s ON f."parentId" = s.id
+		)
+		SELECT
+			ff.*,
+			COALESCE(fc.file_count, 0)::int AS "fileCount",
+			COALESCE(pc.post_count, 0)::int AS "postCount",
+			COALESCE(sc.subfolder_count, 0)::int AS "subfolderCount"
+		FROM file_folders ff
+		LEFT JOIN (
+			SELECT a.root_id, COUNT(DISTINCT fi.id)::int AS file_count
+			FROM all_subfolders a
+			LEFT JOIN files fi ON fi."folderId" = a.id
+			GROUP BY a.root_id
+		) fc ON fc.root_id = ff.id
+		LEFT JOIN (
+			SELECT a.root_id, COUNT(DISTINCT p.id)::int AS post_count
+			FROM all_subfolders a
+			LEFT JOIN posts p ON p."folderId" = a.id
+			GROUP BY a.root_id
+		) pc ON pc.root_id = ff.id
+		LEFT JOIN (
+			SELECT "parentId", COUNT(*)::int AS subfolder_count
+			FROM file_folders
+			WHERE "parentId" IS NOT NULL
+			GROUP BY "parentId"
+		) sc ON sc."parentId" = ff.id
+		WHERE ff."parentId" IS NULL
+		ORDER BY ff."createdAt" DESC
+		LIMIT $1 OFFSET $2
+	`;
 	const result = await pool.query(query, [limit, offset]);
 
 	const totalPages = Math.ceil(total / limit);
@@ -109,8 +146,42 @@ export const getFoldersByParent = async (
 	const countResult = await pool.query(countQuery, [parentId]);
 	const total = countResult.rows[0].count;
 
-	// Get paginated data
-	const query = `SELECT * FROM file_folders WHERE "parentId" = $1 ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`;
+	// Get paginated data with recursive file/post/subfolder counts
+	const query = `
+		WITH RECURSIVE all_subfolders AS (
+			SELECT id, id AS root_id FROM file_folders WHERE "parentId" = $1
+			UNION ALL
+			SELECT f.id, s.root_id FROM file_folders f
+			INNER JOIN all_subfolders s ON f."parentId" = s.id
+		)
+		SELECT
+			ff.*,
+			COALESCE(fc.file_count, 0)::int AS "fileCount",
+			COALESCE(pc.post_count, 0)::int AS "postCount",
+			COALESCE(sc.subfolder_count, 0)::int AS "subfolderCount"
+		FROM file_folders ff
+		LEFT JOIN (
+			SELECT a.root_id, COUNT(DISTINCT fi.id)::int AS file_count
+			FROM all_subfolders a
+			LEFT JOIN files fi ON fi."folderId" = a.id
+			GROUP BY a.root_id
+		) fc ON fc.root_id = ff.id
+		LEFT JOIN (
+			SELECT a.root_id, COUNT(DISTINCT p.id)::int AS post_count
+			FROM all_subfolders a
+			LEFT JOIN posts p ON p."folderId" = a.id
+			GROUP BY a.root_id
+		) pc ON pc.root_id = ff.id
+		LEFT JOIN (
+			SELECT "parentId", COUNT(*)::int AS subfolder_count
+			FROM file_folders
+			WHERE "parentId" IS NOT NULL
+			GROUP BY "parentId"
+		) sc ON sc."parentId" = ff.id
+		WHERE ff."parentId" = $1
+		ORDER BY ff."createdAt" DESC
+		LIMIT $2 OFFSET $3
+	`;
 	const result = await pool.query(query, [parentId, limit, offset]);
 
 	const totalPages = Math.ceil(total / limit);
