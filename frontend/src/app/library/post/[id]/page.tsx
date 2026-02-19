@@ -33,6 +33,8 @@ export default function PostDetailPage() {
 	const [files, setFiles] = useState<PostFileData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [deleting, setDeleting] = useState(false);
+	const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+	const [previewLoading, setPreviewLoading] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
 		if (postId) {
@@ -62,6 +64,32 @@ export default function PostDetailPage() {
 		} catch (error) {
 			console.error('Error loading files:', error);
 			setFiles([]);
+		}
+	};
+
+	const isPreviewable = (mimetype?: string) =>
+		!!mimetype && (mimetype.startsWith('image/') || mimetype === 'application/pdf');
+
+	const togglePreview = async (fileId: string, mimetype?: string) => {
+		if (previewUrls[fileId]) {
+			URL.revokeObjectURL(previewUrls[fileId]);
+			setPreviewUrls((prev) => {
+				const next = { ...prev };
+				delete next[fileId];
+				return next;
+			});
+			return;
+		}
+		setPreviewLoading((prev) => ({ ...prev, [fileId]: true }));
+		try {
+			const response = await fetch(`/api/proxy/files/${fileId}/download`);
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			setPreviewUrls((prev) => ({ ...prev, [fileId]: url }));
+		} catch (e) {
+			console.error('Preview failed', e);
+		} finally {
+			setPreviewLoading((prev) => ({ ...prev, [fileId]: false }));
 		}
 	};
 
@@ -251,32 +279,67 @@ export default function PostDetailPage() {
 						<CardContent>
 							<div className="space-y-3">
 								{files.map((file) => (
-									<div
-										key={file.id}
-										className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
-									>
-										<div className="flex-1">
-											<p className="font-medium text-base">{file.originalName || file.filename}</p>
-											{file.size && (
-												<p className="text-xs text-muted-foreground mt-1">
-													Size: {(file.size / 1024).toFixed(2)} KB
+									<div key={file.id} className="border rounded-lg overflow-hidden">
+										<div className="flex items-center justify-between p-4 hover:bg-accent transition-colors">
+											<div className="flex-1">
+												<p className="font-medium text-base">
+													{file.originalName || file.filename}
 												</p>
-											)}
+												{file.size && (
+													<p className="text-xs text-muted-foreground mt-1">
+														Size: {(file.size / 1024).toFixed(2)} KB
+													</p>
+												)}
+											</div>
+											<div className="flex gap-2">
+												{isPreviewable(file.mimetype) && (
+													<Button
+														size="sm"
+														variant="outline"
+														className="gap-2"
+														onClick={() => togglePreview(file.fileId, file.mimetype)}
+														disabled={previewLoading[file.fileId]}
+													>
+														{previewLoading[file.fileId]
+															? 'Loading…'
+															: previewUrls[file.fileId]
+																? 'Hide'
+																: 'Preview'}
+													</Button>
+												)}
+												<Button
+													size="sm"
+													variant="outline"
+													className="gap-2 bg-[#006837] text-white hover:bg-[#005530] hover:text-white"
+													onClick={() =>
+														handleDownload(
+															file.fileId,
+															file.originalName || file.filename || 'download'
+														)
+													}
+												>
+													<Download className="w-4 h-4" />
+													Download
+												</Button>
+											</div>
 										</div>
-										<Button
-											size="sm"
-											variant="outline"
-											className="gap-2 bg-[#006837] text-white hover:bg-[#005530] hover:text-white"
-											onClick={() =>
-												handleDownload(
-													file.fileId,
-													file.originalName || file.filename || 'download'
-												)
-											}
-										>
-											<Download className="w-4 h-4" />
-											Download
-										</Button>
+										{previewUrls[file.fileId] && (
+											<div className="border-t bg-gray-50 p-4">
+												{file.mimetype?.startsWith('image/') ? (
+													<img
+														src={previewUrls[file.fileId]}
+														alt={file.originalName || file.filename}
+														className="max-h-[500px] max-w-full mx-auto rounded object-contain"
+													/>
+												) : (
+													<iframe
+														src={previewUrls[file.fileId]}
+														className="w-full h-[600px] rounded border"
+														title={file.originalName || file.filename}
+													/>
+												)}
+											</div>
+										)}
 									</div>
 								))}
 							</div>

@@ -28,9 +28,6 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 	const [description, setDescription] = useState('');
 	const [link, setLink] = useState('');
 	const [content, setContent] = useState('');
-	const [category, setCategory] = useState('');
-	const [tags, setTags] = useState('');
-	const [privacy, setPrivacy] = useState<'PUBLIC' | 'PRIVATE' | 'SHARED'>('PUBLIC');
 	const [isAnonymous, setIsAnonymous] = useState(false);
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -43,39 +40,27 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 
 		setLoading(true);
 		try {
-			// Create the post
 			const post = await createPost({
 				title: title.trim(),
 				content: content.trim(),
 				description: description.trim() || undefined,
 				link: link.trim() || undefined,
-				category: category.trim() || undefined,
-				tags: tags
-					.split(',')
-					.map((t) => t.trim())
-					.filter((t) => t.length > 0),
-				privacy,
+				privacy: 'PUBLIC',
 				folderId,
 				isAnonymous,
 			});
 
-			// Upload and attach files
 			if (selectedFiles.length > 0) {
 				for (let i = 0; i < selectedFiles.length; i++) {
-					const file = selectedFiles[i];
-					const uploadedFile = await uploadFile(file, undefined, undefined, privacy);
+					const uploadedFile = await uploadFile(selectedFiles[i], undefined, undefined, 'PUBLIC');
 					await addFileToPost(post.id, uploadedFile.id, i);
 				}
 			}
 
-			// Reset form
 			setTitle('');
 			setDescription('');
 			setLink('');
 			setContent('');
-			setCategory('');
-			setTags('');
-			setPrivacy('PUBLIC');
 			setIsAnonymous(false);
 			setSelectedFiles([]);
 			setOpen(false);
@@ -104,11 +89,11 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 					Create Post
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Create New Post</DialogTitle>
 					<DialogDescription>
-						Create a guide or tutorial post with optional file attachments
+						Write your post using Markdown — supports headings, code blocks, lists, and more.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -163,33 +148,6 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
-						<div>
-							<label className="text-sm font-medium">Category</label>
-							<Input
-								type="text"
-								placeholder="e.g., Tutorial, Guide"
-								value={category}
-								onChange={(e) => setCategory(e.target.value)}
-								disabled={loading}
-							/>
-						</div>
-
-						<div>
-							<label className="text-sm font-medium">Privacy</label>
-							<select
-								value={privacy}
-								onChange={(e) => setPrivacy(e.target.value as 'PUBLIC' | 'PRIVATE' | 'SHARED')}
-								disabled={loading}
-								className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006837]"
-							>
-								<option value="PUBLIC">Public</option>
-								<option value="PRIVATE">Private</option>
-								<option value="SHARED">Shared</option>
-							</select>
-						</div>
-					</div>
-
 					<div className="flex items-center gap-2">
 						<input
 							type="checkbox"
@@ -205,17 +163,6 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 								(your name will not be shown)
 							</span>
 						</label>
-					</div>
-
-					<div>
-						<label className="text-sm font-medium">Tags</label>
-						<Input
-							type="text"
-							placeholder="Comma separated tags (e.g., programming, tutorial)"
-							value={tags}
-							onChange={(e) => setTags(e.target.value)}
-							disabled={loading}
-						/>
 					</div>
 
 					<div>
