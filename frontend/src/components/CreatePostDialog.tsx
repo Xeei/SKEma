@@ -26,6 +26,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 	const [loading, setLoading] = useState(false);
 	const [title, setTitle] = useState('');
 	const [description, setDescription] = useState('');
+	const [link, setLink] = useState('');
 	const [content, setContent] = useState('');
 	const [category, setCategory] = useState('');
 	const [tags, setTags] = useState('');
@@ -46,6 +47,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 				title: title.trim(),
 				content: content.trim(),
 				description: description.trim() || undefined,
+				link: link.trim() || undefined,
 				category: category.trim() || undefined,
 				tags: tags
 					.split(',')
@@ -67,6 +69,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 			// Reset form
 			setTitle('');
 			setDescription('');
+			setLink('');
 			setContent('');
 			setCategory('');
 			setTags('');
@@ -127,6 +130,17 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 							placeholder="Short description (optional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
+							disabled={loading}
+						/>
+					</div>
+
+					<div>
+						<label className="text-sm font-medium">Link</label>
+						<Input
+							type="url"
+							placeholder="https://example.com (optional)"
+							value={link}
+							onChange={(e) => setLink(e.target.value)}
 							disabled={loading}
 						/>
 					</div>

@@ -175,6 +175,18 @@ export default function PostDetailPage() {
 								{post.description && (
 									<CardDescription className="text-base mt-2">{post.description}</CardDescription>
 								)}
+								{post.link && (
+									<div className="mt-3">
+										<a
+											href={post.link}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-blue-600 hover:text-blue-800 underline text-sm flex items-center gap-1"
+										>
+											🔗 {post.link}
+										</a>
+									</div>
+								)}
 							</div>
 						</div>
 

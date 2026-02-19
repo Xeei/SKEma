@@ -9,7 +9,6 @@ import { Sarabun } from 'next/font/google';
 import {
 	getFolderById,
 	FileFolderData,
-	createFolder,
 	getFoldersByParent,
 	deleteFolder,
 } from '@/services/folder.service';
@@ -17,6 +16,7 @@ import { getAllFiles, FileData, uploadFile, downloadFile } from '@/services/file
 import { getPostsByFolder, PostData } from '@/services/post.service';
 import { Download, Trash2, FileText } from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
+import { CreateSubFolderDialog } from '@/components/CreateSubFolderDialog';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -35,9 +35,7 @@ export default function FolderDetailPage() {
 	const [files, setFiles] = useState<FileData[]>([]);
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [creating, setCreating] = useState(false);
 	const [uploading, setUploading] = useState(false);
-	const [newFolderName, setNewFolderName] = useState('');
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
 	useEffect(() => {
@@ -90,22 +88,6 @@ export default function FolderDetailPage() {
 			setPosts(data);
 		} catch (error) {
 			setPosts([]);
-		}
-	};
-
-	const handleCreateSubfolder = async () => {
-		if (!newFolderName.trim()) return;
-		setCreating(true);
-		try {
-			await createFolder(newFolderName.trim(), folderId);
-			setNewFolderName('');
-			await loadSubfolders();
-			alert('Subfolder created successfully!');
-		} catch (error) {
-			console.error('Error creating subfolder:', error);
-			alert('Failed to create subfolder');
-		} finally {
-			setCreating(false);
 		}
 	};
 
@@ -165,41 +147,19 @@ export default function FolderDetailPage() {
 					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
 						{folder.name}
 					</h1>
-					<CreatePostDialog
-						folderId={folderId}
-						onPostCreated={() => {
-							loadFiles();
-							loadPosts();
-						}}
-					/>
+					<div className="flex gap-2">
+						{session?.role === 'ADMIN' && (
+							<CreateSubFolderDialog parentFolderId={folderId} onFolderCreated={loadSubfolders} />
+						)}
+						<CreatePostDialog
+							folderId={folderId}
+							onPostCreated={() => {
+								loadFiles();
+								loadPosts();
+							}}
+						/>
+					</div>
 				</div>
-
-				{session?.role === 'ADMIN' && (
-					<Card>
-						<CardHeader>
-							<CardTitle>Create Subfolder</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="flex items-center gap-2">
-								<input
-									type="text"
-									placeholder="Subfolder name"
-									className="border rounded px-3 py-2 flex-1"
-									value={newFolderName}
-									onChange={(e) => setNewFolderName(e.target.value)}
-									disabled={creating}
-								/>
-								<Button
-									className="bg-[#006837] hover:bg-[#005530]"
-									onClick={handleCreateSubfolder}
-									disabled={creating || !newFolderName.trim()}
-								>
-									{creating ? 'Creating...' : 'Create Subfolder'}
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
-				)}
 
 				{/* Subfolders Section */}
 				<Card>
@@ -248,7 +208,7 @@ export default function FolderDetailPage() {
 				</Card>
 
 				{/* Upload File Section */}
-				<Card>
+				{/* <Card>
 					<CardHeader>
 						<CardTitle>Upload File to this Folder</CardTitle>
 						<CardDescription>Files will be set to PUBLIC by default</CardDescription>
@@ -270,7 +230,7 @@ export default function FolderDetailPage() {
 							</Button>
 						</div>
 					</CardContent>
-				</Card>
+				</Card> */}
 
 				{/* Posts Section */}
 				<Card>
@@ -301,6 +261,17 @@ export default function FolderDetailPage() {
 												<h3 className="font-semibold text-lg text-[#006837]">{post.title}</h3>
 												{post.description && (
 													<p className="text-sm text-muted-foreground mt-1">{post.description}</p>
+												)}
+												{post.link && (
+													<a
+														href={post.link}
+														target="_blank"
+														rel="noopener noreferrer"
+														onClick={(e) => e.stopPropagation()}
+														className="text-blue-600 hover:text-blue-800 underline text-xs mt-1 inline-block"
+													>
+														🔗 {post.link}
+													</a>
 												)}
 												<div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
 													<span>By: {post.authorName || post.authorEmail}</span>
@@ -333,7 +304,7 @@ export default function FolderDetailPage() {
 				</Card>
 
 				{/* Public Files Section */}
-				<Card>
+				{/* <Card>
 					<CardHeader>
 						<CardTitle>Public Files in this Folder</CardTitle>
 						<CardDescription>Only files with privacy set to PUBLIC are shown.</CardDescription>
@@ -376,7 +347,7 @@ export default function FolderDetailPage() {
 							</div>
 						)}
 					</CardContent>
-				</Card>
+				</Card> */}
 			</div>
 		</main>
 	);

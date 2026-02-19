@@ -6,6 +6,7 @@ export interface PostMetadata {
 	title: string;
 	content: string;
 	description?: string | null;
+	link?: string | null;
 	authorId: string;
 	privacy: string;
 	views: number;
@@ -36,6 +37,7 @@ export const createPost = async (
 	content: string,
 	authorId: string,
 	description?: string | null,
+	link?: string | null,
 	privacy?: string,
 	category?: string | null,
 	tags?: string[],
@@ -43,8 +45,8 @@ export const createPost = async (
 ): Promise<PostMetadata> => {
 	const pool: Pool = await getDbConnection();
 	const queryText = `
-        INSERT INTO posts (id, title, content, description, "authorId", privacy, category, tags, "folderId", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        INSERT INTO posts (id, title, content, description, link, "authorId", privacy, category, tags, "folderId", "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING *;
     `;
 
@@ -52,6 +54,7 @@ export const createPost = async (
 		title,
 		content,
 		description || null,
+		link || null,
 		authorId,
 		privacy || 'PUBLIC',
 		category || null,
@@ -147,6 +150,7 @@ export const updatePost = async (
 	title?: string,
 	content?: string,
 	description?: string | null,
+	link?: string | null,
 	privacy?: string,
 	category?: string | null,
 	tags?: string[],
@@ -170,6 +174,10 @@ export const updatePost = async (
 	if (description !== undefined) {
 		updates.push(`description = $${paramCount++}`);
 		values.push(description);
+	}
+	if (link !== undefined) {
+		updates.push(`link = $${paramCount++}`);
+		values.push(link);
 	}
 	if (privacy !== undefined) {
 		updates.push(`privacy = $${paramCount++}`);

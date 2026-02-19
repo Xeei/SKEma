@@ -9,6 +9,7 @@ export interface PostData {
 	title: string;
 	content: string;
 	description?: string | null;
+	link?: string | null;
 	authorId: string;
 	privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
 	views: number;
@@ -38,6 +39,7 @@ export interface CreatePostPayload {
 	title: string;
 	content: string;
 	description?: string;
+	link?: string;
 	privacy?: 'PUBLIC' | 'PRIVATE' | 'SHARED';
 	category?: string;
 	tags?: string[];
