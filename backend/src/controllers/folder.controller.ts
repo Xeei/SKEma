@@ -65,17 +65,10 @@ export const getFoldersByParentController = async (
 	res: Response
 ) => {
 	try {
-		const userId = req.user?.id;
 		const parentId = req.params.parentId as string;
-		if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 		const page = parseInt(req.query.page as string) || 1;
 		const limit = parseInt(req.query.limit as string) || 10;
-		const folders = await getFoldersByParent(
-			parentId || null,
-			userId,
-			page,
-			limit
-		);
+		const folders = await getFoldersByParent(parentId || null, page, limit);
 		res.json(folders);
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to get folders' });

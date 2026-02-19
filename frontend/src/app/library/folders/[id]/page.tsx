@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Sarabun } from 'next/font/google';
 import {
 	getFolderById,
@@ -19,19 +17,20 @@ import {
 	PostData,
 	PaginationMetadata as PostPaginationMetadata,
 } from '@/services/post.service';
-import { Download, Trash2, FileText } from 'lucide-react';
+import {
+	BookOpen,
+	ChevronRight,
+	Download,
+	ExternalLink,
+	FileText,
+	FolderOpen,
+	Home,
+	Trash2,
+} from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
 import { CreateSubFolderDialog } from '@/components/CreateSubFolderDialog';
 import { EditFolderDialog } from '@/components/EditFolderDialog';
 import { Pagination } from '@/components/Pagination';
-import {
-	Breadcrumb,
-	BreadcrumbList,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbSeparator,
-	BreadcrumbPage,
-} from '@/components/ui/breadcrumb';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -40,11 +39,30 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
+const FOLDER_COLORS = [
+	{
+		bg: 'bg-emerald-50',
+		border: 'border-emerald-200',
+		icon: 'bg-emerald-100',
+		text: 'text-emerald-700',
+	},
+	{ bg: 'bg-blue-50', border: 'border-blue-200', icon: 'bg-blue-100', text: 'text-blue-700' },
+	{
+		bg: 'bg-purple-50',
+		border: 'border-purple-200',
+		icon: 'bg-purple-100',
+		text: 'text-purple-700',
+	},
+	{ bg: 'bg-amber-50', border: 'border-amber-200', icon: 'bg-amber-100', text: 'text-amber-700' },
+	{ bg: 'bg-rose-50', border: 'border-rose-200', icon: 'bg-rose-100', text: 'text-rose-700' },
+];
+
 export default function FolderDetailPage() {
 	const router = useRouter();
 	const params = useParams();
 	const { data: session } = useSession();
 	const folderId = params?.id as string;
+
 	const [folder, setFolder] = useState<FileFolderData | null>(null);
 	const [breadcrumbPath, setBreadcrumbPath] = useState<FileFolderData[]>([]);
 	const [subfolders, setSubfolders] = useState<FileFolderData[]>([]);
@@ -69,16 +87,12 @@ export default function FolderDetailPage() {
 	}, [folderId]);
 
 	useEffect(() => {
-		if (folderId) {
-			loadSubfolders(subfoldersPage);
-		}
+		if (folderId) loadSubfolders(subfoldersPage);
 		// eslint-disable-next-line
 	}, [subfoldersPage]);
 
 	useEffect(() => {
-		if (folderId) {
-			loadPosts(postsPage);
-		}
+		if (folderId) loadPosts(postsPage);
 		// eslint-disable-next-line
 	}, [postsPage]);
 
@@ -86,9 +100,8 @@ export default function FolderDetailPage() {
 		try {
 			const data = await getFolderById(folderId);
 			setFolder(data);
-			// Build breadcrumb path
 			await buildBreadcrumbPath(data);
-		} catch (error) {
+		} catch {
 			setFolder(null);
 			setBreadcrumbPath([]);
 		}
@@ -97,28 +110,24 @@ export default function FolderDetailPage() {
 	const buildBreadcrumbPath = async (currentFolder: FileFolderData) => {
 		const path: FileFolderData[] = [currentFolder];
 		let parent = currentFolder.parentId;
-
-		// Traverse up the folder hierarchy
 		while (parent) {
 			try {
 				const parentFolder = await getFolderById(parent);
-				path.unshift(parentFolder); // Add to beginning of array
+				path.unshift(parentFolder);
 				parent = parentFolder.parentId;
-			} catch (error) {
-				console.error('Error loading parent folder:', error);
+			} catch {
 				break;
 			}
 		}
-
 		setBreadcrumbPath(path);
 	};
 
 	const loadSubfolders = async (page: number = 1) => {
 		try {
-			const response = await getFoldersByParent(folderId, page, 10);
+			const response = await getFoldersByParent(folderId, page, 12);
 			setSubfolders(response.data);
 			setSubfoldersPagination(response.pagination);
-		} catch (error) {
+		} catch {
 			setSubfolders([]);
 			setSubfoldersPagination(null);
 		}
@@ -127,13 +136,12 @@ export default function FolderDetailPage() {
 	const loadFiles = async () => {
 		setLoading(true);
 		try {
-			// TODO: Replace with getPublicFilesInFolder(folderId) when implemented
 			const allFiles = await getAllFiles();
 			const publicFiles = allFiles.filter(
 				(file) => file.folderId === folderId && file.privacy === 'PUBLIC'
 			);
 			setFiles(publicFiles);
-		} catch (error) {
+		} catch {
 			setFiles([]);
 		} finally {
 			setLoading(false);
@@ -145,7 +153,7 @@ export default function FolderDetailPage() {
 			const response = await getPostsByFolder(folderId, page, 10);
 			setPosts(response.data);
 			setPostsPagination(response.pagination);
-		} catch (error) {
+		} catch {
 			setPosts([]);
 			setPostsPagination(null);
 		}
@@ -158,10 +166,8 @@ export default function FolderDetailPage() {
 			await uploadFile(selectedFile, undefined, folderId, 'PUBLIC');
 			setSelectedFile(null);
 			await loadFiles();
-			alert('File uploaded successfully!');
 		} catch (error) {
 			console.error('Error uploading file:', error);
-			alert('Failed to upload file');
 		} finally {
 			setUploading(false);
 		}
@@ -176,80 +182,77 @@ export default function FolderDetailPage() {
 	};
 
 	const handleDeleteSubfolder = async (subfolderId: string, e: React.MouseEvent) => {
-		e.stopPropagation(); // Prevent navigation when clicking delete
-		if (!confirm('Are you sure you want to delete this subfolder?')) return;
+		e.stopPropagation();
+		if (!confirm('ยืนยันการลบโฟลเดอร์นี้?')) return;
 		try {
 			await deleteFolder(subfolderId);
 			await loadSubfolders();
-			alert('Subfolder deleted successfully!');
 		} catch (error) {
 			console.error('Error deleting subfolder:', error);
-			alert('Failed to delete subfolder');
 		}
 	};
 
-	if (!folder) {
+	if (!folder && !loading) {
 		return (
-			<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
-				<div className="max-w-7xl mx-auto">
-					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
-						Folder Not Found
-					</h1>
+			<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
+				<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-12 px-6">
+					<div className="max-w-5xl mx-auto">
+						<p className="font-sarabun text-white/60 text-sm mb-2">SKE Schema / คลังความรู้</p>
+						<h1 className="font-sarabun text-4xl font-bold">ไม่พบโฟลเดอร์</h1>
+					</div>
 				</div>
 			</main>
 		);
 	}
 
 	return (
-		<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
-			<div className="max-w-7xl mx-auto space-y-6">
-				{/* Breadcrumb Navigation */}
-				{breadcrumbPath.length > 0 && (
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink
-									href="/library/folders"
-									className="text-[#006837] hover:text-[#005530]"
-								>
-									Folders
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							{breadcrumbPath.map((pathFolder, index) => (
-								<React.Fragment key={pathFolder.id}>
-									{index === breadcrumbPath.length - 1 ? (
-										<BreadcrumbItem>
-											<BreadcrumbPage className="text-[#006837] font-semibold">
-												{pathFolder.name}
-											</BreadcrumbPage>
-										</BreadcrumbItem>
-									) : (
-										<>
-											<BreadcrumbItem>
-												<BreadcrumbLink
-													href={`/library/folders/${pathFolder.id}`}
-													className="text-[#006837] hover:text-[#005530]"
-												>
-													{pathFolder.name}
-												</BreadcrumbLink>
-											</BreadcrumbItem>
-											<BreadcrumbSeparator />
-										</>
-									)}
-								</React.Fragment>
-							))}
-						</BreadcrumbList>
-					</Breadcrumb>
-				)}
+		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
+			{/* Hero */}
+			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-12 px-6">
+				<div className="max-w-5xl mx-auto">
+					{/* Breadcrumb */}
+					<nav className="flex items-center gap-1.5 flex-wrap mb-5 text-sm">
+						<button
+							onClick={() => router.push('/')}
+							className="text-white/50 hover:text-white transition-colors flex items-center gap-1"
+						>
+							<Home className="w-3.5 h-3.5" />
+							<span className="font-sarabun">หน้าหลัก</span>
+						</button>
+						{breadcrumbPath.map((pathFolder, index) => (
+							<React.Fragment key={pathFolder.id}>
+								<ChevronRight className="w-3.5 h-3.5 text-white/30 shrink-0" />
+								{index === breadcrumbPath.length - 1 ? (
+									<span className="font-sarabun text-white font-semibold truncate max-w-50">
+										{pathFolder.name}
+									</span>
+								) : (
+									<button
+										onClick={() => router.push(`/library/folders/${pathFolder.id}`)}
+										className="font-sarabun text-white/60 hover:text-white transition-colors truncate max-w-37.5"
+									>
+										{pathFolder.name}
+									</button>
+								)}
+							</React.Fragment>
+						))}
+					</nav>
 
-				<div>
-					<div className="flex items-center justify-between mb-2">
-						<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
-							{folder.name}
-						</h1>
-						<div className="flex gap-2">
-							{session?.userId === folder.userId && (
+					{/* Folder name & actions */}
+					<div className="flex items-start justify-between gap-4 flex-wrap">
+						<div>
+							<h1 className="font-sarabun text-4xl font-bold tracking-tight">
+								{folder?.name ?? '...'}
+							</h1>
+							{folder?.description && (
+								<p className="font-sarabun text-white/70 text-base mt-2 max-w-2xl">
+									{folder.description}
+								</p>
+							)}
+						</div>
+						{/* Admin / owner controls */}
+						<div className="flex items-center gap-2 shrink-0 flex-wrap">
+							{folder && session?.userId === folder.userId && (
 								<EditFolderDialog folder={folder} onFolderUpdated={loadFolder} />
 							)}
 							{session?.role === 'ADMIN' && (
@@ -267,221 +270,218 @@ export default function FolderDetailPage() {
 							/>
 						</div>
 					</div>
-					{folder.description && (
-						<p className="text-muted-foreground text-sm">{folder.description}</p>
-					)}
-					<Card>
-						<CardHeader>
-							<CardTitle>Subfolders</CardTitle>
-							<CardDescription>Folders within this folder</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{loading ? (
-								<div className="flex items-center justify-center py-12">
-									<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
+
+					{/* Quick stats */}
+					{!loading && (
+						<div className="flex items-center gap-3 mt-6 flex-wrap">
+							{subfolders.length > 0 && (
+								<div className="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm font-sarabun text-white/80">
+									{subfolders.length} โฟลเดอร์ย่อย
 								</div>
-							) : subfolders.length === 0 ? (
-								<div className="text-center py-12 text-muted-foreground">No subfolders yet.</div>
-							) : (
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-									{subfolders.map((subfolder) => (
-										<Card
-											key={subfolder.id}
-											className="cursor-pointer hover:shadow-lg transition-shadow p-4 relative"
-											onClick={() => router.push(`/library/folders/${subfolder.id}`)}
-										>
-											<div className="flex items-start justify-between">
-												<div className="flex-1">
-													<CardTitle className="text-base font-semibold text-[#006837] truncate">
-														📁 {subfolder.name}
-													</CardTitle>
+							)}
+							{posts.length > 0 && (
+								<div className="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm font-sarabun text-white/80">
+									{posts.length} โพสต์
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			</div>
+
+			{/* Content */}
+			<div className="max-w-5xl mx-auto px-6 py-10 space-y-12">
+				{loading ? (
+					<div className="flex flex-col items-center justify-center py-24 gap-4">
+						<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
+						<p className="font-sarabun text-gray-500">กำลังโหลดข้อมูล...</p>
+					</div>
+				) : (
+					<>
+						{/* Subfolders */}
+						{(subfolders.length > 0 || session?.role === 'ADMIN') && (
+							<section>
+								<div className="flex items-center justify-between mb-5">
+									<div className="flex items-center gap-3">
+										<div className="w-1.5 h-7 bg-[#006837] rounded-full" />
+										<h2 className="font-sarabun text-xl font-bold text-gray-800">โฟลเดอร์ย่อย</h2>
+									</div>
+									{subfoldersPagination && (
+										<span className="font-sarabun text-sm text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+											{subfoldersPagination.total} โฟลเดอร์
+										</span>
+									)}
+								</div>
+
+								{subfolders.length === 0 ? (
+									<div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+										<p className="font-sarabun text-gray-400 text-sm">ยังไม่มีโฟลเดอร์ย่อย</p>
+									</div>
+								) : (
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+										{subfolders.map((subfolder, index) => {
+											const color = FOLDER_COLORS[index % FOLDER_COLORS.length];
+											return (
+												<div
+													key={subfolder.id}
+													onClick={() => router.push(`/library/folders/${subfolder.id}`)}
+													className={`${color.bg} border ${color.border} rounded-xl p-5 hover:shadow-md transition-all cursor-pointer group`}
+												>
+													<div className="flex items-start justify-between mb-3">
+														<div
+															className={`w-10 h-10 ${color.icon} rounded-lg flex items-center justify-center shrink-0`}
+														>
+															<BookOpen className={`w-5 h-5 ${color.text}`} />
+														</div>
+														<div className="flex items-center gap-1">
+															{session?.userId === subfolder.userId && (
+																<button
+																	className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+																	onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
+																>
+																	<Trash2 className="w-3.5 h-3.5" />
+																</button>
+															)}
+															<ChevronRight
+																className={`w-4 h-4 ${color.text} opacity-0 group-hover:opacity-100 transition-opacity`}
+															/>
+														</div>
+													</div>
+													<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-[#006837] transition-colors leading-snug">
+														{subfolder.name}
+													</h3>
 													{subfolder.description && (
-														<p className="text-xs text-muted-foreground mt-1">
+														<p className="font-sarabun text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
 															{subfolder.description}
 														</p>
 													)}
+													<div className="mt-4 flex items-center gap-1.5 text-gray-400">
+														<FolderOpen className="w-3.5 h-3.5" />
+														<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
+													</div>
 												</div>
-												{session?.userId === subfolder.userId && (
-													<Button
-														size="sm"
-														variant="ghost"
-														className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-														onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
-													>
-														<Trash2 className="w-4 h-4" />
-													</Button>
-												)}
+											);
+										})}
+									</div>
+								)}
+
+								{subfoldersPagination && subfoldersPagination.totalPages > 1 && (
+									<div className="mt-6">
+										<Pagination
+											currentPage={subfoldersPagination.page}
+											totalPages={subfoldersPagination.totalPages}
+											onPageChange={setSubfoldersPage}
+											hasNext={subfoldersPagination.hasNext}
+											hasPrev={subfoldersPagination.hasPrev}
+										/>
+									</div>
+								)}
+							</section>
+						)}
+
+						{/* Posts */}
+						<section>
+							<div className="flex items-center justify-between mb-5">
+								<div className="flex items-center gap-3">
+									<div className="w-1.5 h-7 bg-[#FDB913] rounded-full" />
+									<h2 className="font-sarabun text-xl font-bold text-gray-800">โพสต์และเอกสาร</h2>
+								</div>
+								{postsPagination && (
+									<span className="font-sarabun text-sm text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+										{postsPagination.total} โพสต์
+									</span>
+								)}
+							</div>
+
+							{posts.length === 0 ? (
+								<div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center">
+									<FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+									<p className="font-sarabun text-gray-400 text-sm">ยังไม่มีโพสต์ในโฟลเดอร์นี้</p>
+								</div>
+							) : (
+								<div className="space-y-3">
+									{posts.map((post) => (
+										<div
+											key={post.id}
+											onClick={() => router.push(`/library/post/${post.id}`)}
+											className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-[#006837]/30 transition-all cursor-pointer group"
+										>
+											<div className="flex items-start gap-4">
+												<div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
+													<FileText className="w-5 h-5 text-[#006837]" />
+												</div>
+												<div className="flex-1 min-w-0">
+													<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-[#006837] transition-colors leading-snug">
+														{post.title}
+													</h3>
+													{post.description && (
+														<p className="font-sarabun text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+															{post.description}
+														</p>
+													)}
+													{post.link && (
+														<a
+															href={post.link}
+															target="_blank"
+															rel="noopener noreferrer"
+															onClick={(e) => e.stopPropagation()}
+															className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 text-xs mt-2 transition-colors"
+														>
+															<ExternalLink className="w-3 h-3" />
+															<span className="font-sarabun truncate max-w-xs">{post.link}</span>
+														</a>
+													)}
+													<div className="flex items-center gap-3 mt-3 flex-wrap">
+														<span className="font-sarabun text-xs text-gray-400">
+															{post.authorName || post.authorEmail}
+														</span>
+														<span className="text-gray-200">•</span>
+														<span className="font-sarabun text-xs text-gray-400">
+															{new Date(post.createdAt).toLocaleDateString('th-TH', {
+																year: 'numeric',
+																month: 'short',
+																day: 'numeric',
+															})}
+														</span>
+														{post.category && (
+															<>
+																<span className="text-gray-200">•</span>
+																<span className="bg-[#006837]/10 text-[#006837] font-sarabun text-xs px-2.5 py-0.5 rounded-full font-medium">
+																	{post.category}
+																</span>
+															</>
+														)}
+														{post.fileCount && post.fileCount > 0 && (
+															<>
+																<span className="text-gray-200">•</span>
+																<span className="font-sarabun text-xs text-gray-400">
+																	{post.fileCount} ไฟล์
+																</span>
+															</>
+														)}
+													</div>
+												</div>
+												<ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006837] transition-colors shrink-0 mt-1" />
 											</div>
-											<p className="text-xs text-muted-foreground mt-2">
-												Created: {new Date(subfolder.createdAt).toLocaleDateString()}
-											</p>
-										</Card>
+										</div>
 									))}
 								</div>
 							)}
-							{subfoldersPagination && (
-								<Pagination
-									currentPage={subfoldersPagination.page}
-									totalPages={subfoldersPagination.totalPages}
-									onPageChange={setSubfoldersPage}
-									hasNext={subfoldersPagination.hasNext}
-									hasPrev={subfoldersPagination.hasPrev}
-								/>
+
+							{postsPagination && postsPagination.totalPages > 1 && (
+								<div className="mt-6">
+									<Pagination
+										currentPage={postsPagination.page}
+										totalPages={postsPagination.totalPages}
+										onPageChange={setPostsPage}
+										hasNext={postsPagination.hasNext}
+										hasPrev={postsPagination.hasPrev}
+									/>
+								</div>
 							)}
-						</CardContent>
-					</Card>
-				</div>
-
-				{/* Upload File Section */}
-				{/* <Card>
-					<CardHeader>
-						<CardTitle>Upload File to this Folder</CardTitle>
-						<CardDescription>Files will be set to PUBLIC by default</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center gap-2">
-							<input
-								type="file"
-								className="border rounded px-3 py-2 flex-1"
-								onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-								disabled={uploading}
-							/>
-							<Button
-								className="bg-[#006837] hover:bg-[#005530]"
-								onClick={handleFileUpload}
-								disabled={uploading || !selectedFile}
-							>
-								{uploading ? 'Uploading...' : 'Upload File'}
-							</Button>
-						</div>
-					</CardContent>
-				</Card> */}
-
-				{/* Posts Section */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Posts in this Folder</CardTitle>
-						<CardDescription>Guides and posts associated with this folder</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{loading ? (
-							<div className="flex items-center justify-center py-12">
-								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
-							</div>
-						) : posts.length === 0 ? (
-							<div className="text-center py-12 text-muted-foreground">
-								No posts in this folder yet.
-							</div>
-						) : (
-							<div className="space-y-3">
-								{posts.map((post) => (
-									<Card
-										key={post.id}
-										className="cursor-pointer hover:shadow-lg transition-shadow p-4"
-										onClick={() => router.push(`/library/post/${post.id}`)}
-									>
-										<div className="flex items-start gap-3">
-											<FileText className="w-5 h-5 text-[#006837] mt-1" />
-											<div className="flex-1">
-												<h3 className="font-semibold text-lg text-[#006837]">{post.title}</h3>
-												{post.description && (
-													<p className="text-sm text-muted-foreground mt-1">{post.description}</p>
-												)}
-												{post.link && (
-													<a
-														href={post.link}
-														target="_blank"
-														rel="noopener noreferrer"
-														onClick={(e) => e.stopPropagation()}
-														className="text-blue-600 hover:text-blue-800 underline text-xs mt-1 inline-block"
-													>
-														🔗 {post.link}
-													</a>
-												)}
-												<div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-													<span>By: {post.authorName || post.authorEmail}</span>
-													<span>•</span>
-													<span>{new Date(post.createdAt).toLocaleDateString()}</span>
-													{post.category && (
-														<>
-															<span>•</span>
-															<span className="bg-[#006837] text-white px-2 py-1 rounded">
-																{post.category}
-															</span>
-														</>
-													)}
-													{post.fileCount && post.fileCount > 0 && (
-														<>
-															<span>•</span>
-															<span>
-																{post.fileCount} file{post.fileCount > 1 ? 's' : ''}
-															</span>
-														</>
-													)}
-												</div>
-											</div>
-										</div>
-									</Card>
-								))}
-							</div>
-						)}
-						{postsPagination && (
-							<Pagination
-								currentPage={postsPagination.page}
-								totalPages={postsPagination.totalPages}
-								onPageChange={setPostsPage}
-								hasNext={postsPagination.hasNext}
-								hasPrev={postsPagination.hasPrev}
-							/>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Public Files Section */}
-				{/* <Card>
-					<CardHeader>
-						<CardTitle>Public Files in this Folder</CardTitle>
-						<CardDescription>Only files with privacy set to PUBLIC are shown.</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{loading ? (
-							<div className="flex items-center justify-center py-12">
-								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
-							</div>
-						) : files.length === 0 ? (
-							<div className="text-center py-12 text-muted-foreground">
-								No public files in this folder.
-							</div>
-						) : (
-							<div className="space-y-3">
-								{files.map((file) => (
-									<div
-										key={file.id}
-										className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
-									>
-										<div className="flex-1">
-											<p className="font-medium text-base">{file.originalName}</p>
-											<p className="text-xs text-muted-foreground mt-1">
-												Uploaded: {new Date(file.createdAt).toLocaleDateString()} • Size:{' '}
-												{file.size} bytes
-												{file.downloads > 0 && ` • ${file.downloads} downloads`}
-											</p>
-										</div>
-										<Button
-											size="sm"
-											variant="outline"
-											className="gap-2 bg-[#006837] text-white hover:bg-[#005530] hover:text-white"
-											onClick={() => handleDownload(file.id, file.originalName)}
-										>
-											<Download className="w-4 h-4" />
-											Download
-										</Button>
-									</div>
-								))}
-							</div>
-						)}
-					</CardContent>
-				</Card> */}
+						</section>
+					</>
+				)}
 			</div>
 		</main>
 	);

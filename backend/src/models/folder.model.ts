@@ -98,7 +98,6 @@ export const getFoldersByUser = async (
 // List all child folders for a parent
 export const getFoldersByParent = async (
 	parentId: string | null,
-	userId: string,
 	page: number = 1,
 	limit: number = 10
 ): Promise<PaginatedResponse<FileFolderData>> => {
@@ -106,13 +105,13 @@ export const getFoldersByParent = async (
 	const offset = (page - 1) * limit;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1 AND "userId" = $2`;
-	const countResult = await pool.query(countQuery, [parentId, userId]);
+	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1`;
+	const countResult = await pool.query(countQuery, [parentId]);
 	const total = countResult.rows[0].count;
 
 	// Get paginated data
-	const query = `SELECT * FROM file_folders WHERE "parentId" = $1 AND "userId" = $2 ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`;
-	const result = await pool.query(query, [parentId, userId, limit, offset]);
+	const query = `SELECT * FROM file_folders WHERE "parentId" = $1 ORDER BY "createdAt" DESC LIMIT $2 OFFSET $3`;
+	const result = await pool.query(query, [parentId, limit, offset]);
 
 	const totalPages = Math.ceil(total / limit);
 
