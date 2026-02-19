@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,12 +11,27 @@ import {
 	FileFolderData,
 	getFoldersByParent,
 	deleteFolder,
+	PaginationMetadata,
 } from '@/services/folder.service';
 import { getAllFiles, FileData, uploadFile, downloadFile } from '@/services/file.service';
-import { getPostsByFolder, PostData } from '@/services/post.service';
+import {
+	getPostsByFolder,
+	PostData,
+	PaginationMetadata as PostPaginationMetadata,
+} from '@/services/post.service';
 import { Download, Trash2, FileText } from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
 import { CreateSubFolderDialog } from '@/components/CreateSubFolderDialog';
+import { EditFolderDialog } from '@/components/EditFolderDialog';
+import { Pagination } from '@/components/Pagination';
+import {
+	Breadcrumb,
+	BreadcrumbList,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbSeparator,
+	BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -31,38 +46,81 @@ export default function FolderDetailPage() {
 	const { data: session } = useSession();
 	const folderId = params?.id as string;
 	const [folder, setFolder] = useState<FileFolderData | null>(null);
+	const [breadcrumbPath, setBreadcrumbPath] = useState<FileFolderData[]>([]);
 	const [subfolders, setSubfolders] = useState<FileFolderData[]>([]);
 	const [files, setFiles] = useState<FileData[]>([]);
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [uploading, setUploading] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [subfoldersPage, setSubfoldersPage] = useState(1);
+	const [subfoldersPagination, setSubfoldersPagination] = useState<PaginationMetadata | null>(null);
+	const [postsPage, setPostsPage] = useState(1);
+	const [postsPagination, setPostsPagination] = useState<PostPaginationMetadata | null>(null);
 
 	useEffect(() => {
 		if (folderId) {
 			loadFolder();
-			loadSubfolders();
+			loadSubfolders(subfoldersPage);
 			loadFiles();
-			loadPosts();
+			loadPosts(postsPage);
 		}
 		// eslint-disable-next-line
 	}, [folderId]);
+
+	useEffect(() => {
+		if (folderId) {
+			loadSubfolders(subfoldersPage);
+		}
+		// eslint-disable-next-line
+	}, [subfoldersPage]);
+
+	useEffect(() => {
+		if (folderId) {
+			loadPosts(postsPage);
+		}
+		// eslint-disable-next-line
+	}, [postsPage]);
 
 	const loadFolder = async () => {
 		try {
 			const data = await getFolderById(folderId);
 			setFolder(data);
+			// Build breadcrumb path
+			await buildBreadcrumbPath(data);
 		} catch (error) {
 			setFolder(null);
+			setBreadcrumbPath([]);
 		}
 	};
 
-	const loadSubfolders = async () => {
+	const buildBreadcrumbPath = async (currentFolder: FileFolderData) => {
+		const path: FileFolderData[] = [currentFolder];
+		let parent = currentFolder.parentId;
+
+		// Traverse up the folder hierarchy
+		while (parent) {
+			try {
+				const parentFolder = await getFolderById(parent);
+				path.unshift(parentFolder); // Add to beginning of array
+				parent = parentFolder.parentId;
+			} catch (error) {
+				console.error('Error loading parent folder:', error);
+				break;
+			}
+		}
+
+		setBreadcrumbPath(path);
+	};
+
+	const loadSubfolders = async (page: number = 1) => {
 		try {
-			const data = await getFoldersByParent(folderId);
-			setSubfolders(data);
+			const response = await getFoldersByParent(folderId, page, 10);
+			setSubfolders(response.data);
+			setSubfoldersPagination(response.pagination);
 		} catch (error) {
 			setSubfolders([]);
+			setSubfoldersPagination(null);
 		}
 	};
 
@@ -82,12 +140,14 @@ export default function FolderDetailPage() {
 		}
 	};
 
-	const loadPosts = async () => {
+	const loadPosts = async (page: number = 1) => {
 		try {
-			const data = await getPostsByFolder(folderId);
-			setPosts(data);
+			const response = await getPostsByFolder(folderId, page, 10);
+			setPosts(response.data);
+			setPostsPagination(response.pagination);
 		} catch (error) {
 			setPosts([]);
+			setPostsPagination(null);
 		}
 	};
 
@@ -143,69 +203,134 @@ export default function FolderDetailPage() {
 	return (
 		<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
 			<div className="max-w-7xl mx-auto space-y-6">
-				<div className="flex items-center justify-between">
-					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
-						{folder.name}
-					</h1>
-					<div className="flex gap-2">
-						{session?.role === 'ADMIN' && (
-							<CreateSubFolderDialog parentFolderId={folderId} onFolderCreated={loadSubfolders} />
-						)}
-						<CreatePostDialog
-							folderId={folderId}
-							onPostCreated={() => {
-								loadFiles();
-								loadPosts();
-							}}
-						/>
-					</div>
-				</div>
-
-				{/* Subfolders Section */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Subfolders</CardTitle>
-						<CardDescription>Folders within this folder</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{loading ? (
-							<div className="flex items-center justify-center py-12">
-								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
-							</div>
-						) : subfolders.length === 0 ? (
-							<div className="text-center py-12 text-muted-foreground">No subfolders yet.</div>
-						) : (
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								{subfolders.map((subfolder) => (
-									<Card
-										key={subfolder.id}
-										className="cursor-pointer hover:shadow-lg transition-shadow p-4 relative"
-										onClick={() => router.push(`/library/folders/${subfolder.id}`)}
-									>
-										<div className="flex items-start justify-between">
-											<CardTitle className="text-base font-semibold text-[#006837] truncate flex-1">
-												📁 {subfolder.name}
-											</CardTitle>
-											{session?.userId === subfolder.userId && (
-												<Button
-													size="sm"
-													variant="ghost"
-													className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-													onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
+				{/* Breadcrumb Navigation */}
+				{breadcrumbPath.length > 0 && (
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink
+									href="/library/folders"
+									className="text-[#006837] hover:text-[#005530]"
+								>
+									Folders
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator />
+							{breadcrumbPath.map((pathFolder, index) => (
+								<React.Fragment key={pathFolder.id}>
+									{index === breadcrumbPath.length - 1 ? (
+										<BreadcrumbItem>
+											<BreadcrumbPage className="text-[#006837] font-semibold">
+												{pathFolder.name}
+											</BreadcrumbPage>
+										</BreadcrumbItem>
+									) : (
+										<>
+											<BreadcrumbItem>
+												<BreadcrumbLink
+													href={`/library/folders/${pathFolder.id}`}
+													className="text-[#006837] hover:text-[#005530]"
 												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											)}
-										</div>
-										<p className="text-xs text-muted-foreground mt-2">
-											Created: {new Date(subfolder.createdAt).toLocaleDateString()}
-										</p>
-									</Card>
-								))}
-							</div>
-						)}
-					</CardContent>
-				</Card>
+													{pathFolder.name}
+												</BreadcrumbLink>
+											</BreadcrumbItem>
+											<BreadcrumbSeparator />
+										</>
+									)}
+								</React.Fragment>
+							))}
+						</BreadcrumbList>
+					</Breadcrumb>
+				)}
+
+				<div>
+					<div className="flex items-center justify-between mb-2">
+						<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
+							{folder.name}
+						</h1>
+						<div className="flex gap-2">
+							{session?.userId === folder.userId && (
+								<EditFolderDialog folder={folder} onFolderUpdated={loadFolder} />
+							)}
+							{session?.role === 'ADMIN' && (
+								<CreateSubFolderDialog
+									parentFolderId={folderId}
+									onFolderCreated={() => loadSubfolders(subfoldersPage)}
+								/>
+							)}
+							<CreatePostDialog
+								folderId={folderId}
+								onPostCreated={() => {
+									loadFiles();
+									loadPosts();
+								}}
+							/>
+						</div>
+					</div>
+					{folder.description && (
+						<p className="text-muted-foreground text-sm">{folder.description}</p>
+					)}
+					<Card>
+						<CardHeader>
+							<CardTitle>Subfolders</CardTitle>
+							<CardDescription>Folders within this folder</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{loading ? (
+								<div className="flex items-center justify-center py-12">
+									<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
+								</div>
+							) : subfolders.length === 0 ? (
+								<div className="text-center py-12 text-muted-foreground">No subfolders yet.</div>
+							) : (
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+									{subfolders.map((subfolder) => (
+										<Card
+											key={subfolder.id}
+											className="cursor-pointer hover:shadow-lg transition-shadow p-4 relative"
+											onClick={() => router.push(`/library/folders/${subfolder.id}`)}
+										>
+											<div className="flex items-start justify-between">
+												<div className="flex-1">
+													<CardTitle className="text-base font-semibold text-[#006837] truncate">
+														📁 {subfolder.name}
+													</CardTitle>
+													{subfolder.description && (
+														<p className="text-xs text-muted-foreground mt-1">
+															{subfolder.description}
+														</p>
+													)}
+												</div>
+												{session?.userId === subfolder.userId && (
+													<Button
+														size="sm"
+														variant="ghost"
+														className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+														onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
+													>
+														<Trash2 className="w-4 h-4" />
+													</Button>
+												)}
+											</div>
+											<p className="text-xs text-muted-foreground mt-2">
+												Created: {new Date(subfolder.createdAt).toLocaleDateString()}
+											</p>
+										</Card>
+									))}
+								</div>
+							)}
+							{subfoldersPagination && (
+								<Pagination
+									currentPage={subfoldersPagination.page}
+									totalPages={subfoldersPagination.totalPages}
+									onPageChange={setSubfoldersPage}
+									hasNext={subfoldersPagination.hasNext}
+									hasPrev={subfoldersPagination.hasPrev}
+								/>
+							)}
+						</CardContent>
+					</Card>
+				</div>
 
 				{/* Upload File Section */}
 				{/* <Card>
@@ -299,6 +424,15 @@ export default function FolderDetailPage() {
 									</Card>
 								))}
 							</div>
+						)}
+						{postsPagination && (
+							<Pagination
+								currentPage={postsPagination.page}
+								totalPages={postsPagination.totalPages}
+								onPageChange={setPostsPage}
+								hasNext={postsPagination.hasNext}
+								hasPrev={postsPagination.hasPrev}
+							/>
 						)}
 					</CardContent>
 				</Card>

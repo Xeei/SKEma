@@ -46,6 +46,20 @@ export interface CreatePostPayload {
 	folderId?: string;
 }
 
+export interface PaginationMetadata {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+	data: T[];
+	pagination: PaginationMetadata;
+}
+
 // Create a new post
 export const createPost = async (payload: CreatePostPayload): Promise<PostData> => {
 	const { data } = await instance.post('/', payload);
@@ -53,14 +67,20 @@ export const createPost = async (payload: CreatePostPayload): Promise<PostData> 
 };
 
 // Get all posts
-export const getAllPosts = async (): Promise<PostData[]> => {
-	const { data } = await instance.get('/all');
+export const getAllPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostData>> => {
+	const { data } = await instance.get('/all', { params: { page, limit } });
 	return data;
 };
 
 // Get public posts
-export const getPublicPosts = async (): Promise<PostData[]> => {
-	const { data } = await instance.get('/public');
+export const getPublicPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostData>> => {
+	const { data } = await instance.get('/public', { params: { page, limit } });
 	return data;
 };
 
@@ -77,8 +97,12 @@ export const getPostsByAuthor = async (authorId: string): Promise<PostData[]> =>
 };
 
 // Get posts by folder
-export const getPostsByFolder = async (folderId: string): Promise<PostData[]> => {
-	const { data } = await instance.get(`/folder/${folderId}`);
+export const getPostsByFolder = async (
+	folderId: string,
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostData>> => {
+	const { data } = await instance.get(`/folder/${folderId}`, { params: { page, limit } });
 	return data;
 };
 

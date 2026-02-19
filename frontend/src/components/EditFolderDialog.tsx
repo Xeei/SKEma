@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -13,22 +13,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus } from 'lucide-react';
-import { createFolder } from '@/services/folder.service';
+import { Edit } from 'lucide-react';
+import { updateFolder, FileFolderData } from '@/services/folder.service';
 
-interface CreateSubFolderDialogProps {
-	parentFolderId: string;
-	onFolderCreated?: () => void;
+interface EditFolderDialogProps {
+	folder: FileFolderData;
+	onFolderUpdated?: () => void;
 }
 
-export function CreateSubFolderDialog({
-	parentFolderId,
-	onFolderCreated,
-}: CreateSubFolderDialogProps) {
+export function EditFolderDialog({ folder, onFolderUpdated }: EditFolderDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [folderName, setFolderName] = useState('');
-	const [folderDescription, setFolderDescription] = useState('');
+	const [folderName, setFolderName] = useState(folder.name);
+	const [folderDescription, setFolderDescription] = useState(folder.description || '');
+
+	// Update form when folder prop changes
+	useEffect(() => {
+		setFolderName(folder.name);
+		setFolderDescription(folder.description || '');
+	}, [folder]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -39,18 +42,14 @@ export function CreateSubFolderDialog({
 
 		setLoading(true);
 		try {
-			await createFolder(folderName.trim(), parentFolderId, folderDescription.trim() || undefined);
+			await updateFolder(folder.id, folderName.trim(), folderDescription.trim() || undefined);
 
-			// Reset form
-			setFolderName('');
-			setFolderDescription('');
 			setOpen(false);
-
-			alert('Subfolder created successfully!');
-			onFolderCreated?.();
+			alert('Folder updated successfully!');
+			onFolderUpdated?.();
 		} catch (error) {
-			console.error('Error creating subfolder:', error);
-			alert('Failed to create subfolder');
+			console.error('Error updating folder:', error);
+			alert('Failed to update folder');
 		} finally {
 			setLoading(false);
 		}
@@ -59,15 +58,15 @@ export function CreateSubFolderDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="bg-[#006837] hover:bg-[#005530] gap-2">
-					<Plus className="w-4 h-4" />
-					Create Subfolder
+				<Button variant="outline" size="sm" className="gap-2">
+					<Edit className="w-4 h-4" />
+					Edit Folder
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Create New Subfolder</DialogTitle>
-					<DialogDescription>Create a subfolder within the current folder</DialogDescription>
+					<DialogTitle>Edit Folder</DialogTitle>
+					<DialogDescription>Update folder name and description</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
@@ -76,7 +75,7 @@ export function CreateSubFolderDialog({
 						</label>
 						<Input
 							type="text"
-							placeholder="Enter subfolder name"
+							placeholder="Enter folder name"
 							value={folderName}
 							onChange={(e) => setFolderName(e.target.value)}
 							disabled={loading}
@@ -107,7 +106,7 @@ export function CreateSubFolderDialog({
 							Cancel
 						</Button>
 						<Button type="submit" className="bg-[#006837] hover:bg-[#005530]" disabled={loading}>
-							{loading ? 'Creating...' : 'Create Subfolder'}
+							{loading ? 'Updating...' : 'Update Folder'}
 						</Button>
 					</DialogFooter>
 				</form>

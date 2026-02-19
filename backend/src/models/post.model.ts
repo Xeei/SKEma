@@ -32,6 +32,20 @@ export interface PostFileMetadata {
 	size?: number;
 }
 
+export interface PaginationMetadata {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+	data: T[];
+	pagination: PaginationMetadata;
+}
+
 export const createPost = async (
 	title: string,
 	content: string,
@@ -65,8 +79,19 @@ export const createPost = async (
 	return result.rows[0];
 };
 
-export const getAllPosts = async (): Promise<PostMetadata[]> => {
+export const getAllPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostMetadata>> => {
 	const pool: Pool = await getDbConnection();
+	const offset = (page - 1) * limit;
+
+	// Get total count
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p`;
+	const countResult = await pool.query(countQuery);
+	const total = countResult.rows[0].count;
+
+	// Get paginated data
 	const queryText = `
         SELECT 
             p.*,
@@ -77,10 +102,24 @@ export const getAllPosts = async (): Promise<PostMetadata[]> => {
         LEFT JOIN users u ON p."authorId" = u.id
         LEFT JOIN post_files pf ON p.id = pf."postId"
         GROUP BY p.id, u.name, u.email
-        ORDER BY p."createdAt" DESC;
+        ORDER BY p."createdAt" DESC
+        LIMIT $1 OFFSET $2;
     `;
-	const result = await pool.query(queryText);
-	return result.rows;
+	const result = await pool.query(queryText, [limit, offset]);
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
 };
 
 export const getPostById = async (id: string): Promise<PostMetadata | null> => {
@@ -126,8 +165,19 @@ export const getPostsByAuthor = async (
 	return result.rows;
 };
 
-export const getPublicPosts = async (): Promise<PostMetadata[]> => {
+export const getPublicPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostMetadata>> => {
 	const pool: Pool = await getDbConnection();
+	const offset = (page - 1) * limit;
+
+	// Get total count
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p.privacy = 'PUBLIC'`;
+	const countResult = await pool.query(countQuery);
+	const total = countResult.rows[0].count;
+
+	// Get paginated data
 	const queryText = `
         SELECT 
             p.*,
@@ -139,10 +189,24 @@ export const getPublicPosts = async (): Promise<PostMetadata[]> => {
         LEFT JOIN post_files pf ON p.id = pf."postId"
         WHERE p.privacy = 'PUBLIC'
         GROUP BY p.id, u.name, u.email
-        ORDER BY p."createdAt" DESC;
+        ORDER BY p."createdAt" DESC
+        LIMIT $1 OFFSET $2;
     `;
-	const result = await pool.query(queryText);
-	return result.rows;
+	const result = await pool.query(queryText, [limit, offset]);
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
 };
 
 export const updatePost = async (
@@ -311,9 +375,19 @@ export const updateFileOrder = async (
 };
 
 export const getPostsByFolder = async (
-	folderId: string
-): Promise<PostMetadata[]> => {
+	folderId: string,
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostMetadata>> => {
 	const pool: Pool = await getDbConnection();
+	const offset = (page - 1) * limit;
+
+	// Get total count
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1`;
+	const countResult = await pool.query(countQuery, [folderId]);
+	const total = countResult.rows[0].count;
+
+	// Get paginated data
 	const queryText = `
         SELECT 
             p.*,
@@ -325,10 +399,23 @@ export const getPostsByFolder = async (
         LEFT JOIN post_files pf ON p.id = pf."postId"
         WHERE p."folderId" = $1
         GROUP BY p.id, u.name, u.email
-        ORDER BY p."createdAt" DESC;
+        ORDER BY p."createdAt" DESC
+        LIMIT $2 OFFSET $3;
     `;
-
-	const values = [folderId];
+	const values = [folderId, limit, offset];
 	const result = await pool.query(queryText, values);
-	return result.rows;
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
 };

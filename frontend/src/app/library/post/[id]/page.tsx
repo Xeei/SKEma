@@ -15,6 +15,7 @@ import {
 } from '@/services/post.service';
 import { downloadFile } from '@/services/file.service';
 import { Download, ArrowLeft, Calendar, User, Eye, Lock, Globe, Users, Trash2 } from 'lucide-react';
+import { EditPostDialog } from '@/components/EditPostDialog';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -152,15 +153,18 @@ export default function PostDetailPage() {
 						Back
 					</Button>
 					{session?.userId === post.authorId && (
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={deleting}
-							className="flex items-center gap-2"
-						>
-							<Trash2 className="w-4 h-4" />
-							{deleting ? 'Deleting...' : 'Delete Post'}
-						</Button>
+						<div className="flex gap-2">
+							<EditPostDialog post={post} onPostUpdated={loadPost} />
+							<Button
+								variant="destructive"
+								onClick={handleDelete}
+								disabled={deleting}
+								className="flex items-center gap-2"
+							>
+								<Trash2 className="w-4 h-4" />
+								{deleting ? 'Deleting...' : 'Delete Post'}
+							</Button>
+						</div>
 					)}
 				</div>
 

@@ -4,25 +4,41 @@ import { getDbConnection } from '../database/pg.database';
 export interface FileFolderData {
 	id: string;
 	name: string;
+	description?: string;
 	createdAt: Date;
 	updatedAt: Date;
 	userId: string;
 	parentId: string;
 }
 
+export interface PaginationMetadata {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+	data: T[];
+	pagination: PaginationMetadata;
+}
+
 // Create a folder
 export const createFolder = async (
 	name: string,
 	userId: string,
-	parentId?: string | null
+	parentId?: string | null,
+	description?: string
 ): Promise<FileFolderData> => {
 	const pool: Pool = await getDbConnection();
 	const query = `
-		INSERT INTO file_folders (id, name, "userId", "parentId", "createdAt", "updatedAt")
-		VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+		INSERT INTO file_folders (id, name, description, "userId", "parentId", "createdAt", "updatedAt")
+		VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
 		RETURNING *;
 	`;
-	const values = [name, userId, parentId || null];
+	const values = [name, description || null, userId, parentId || null];
 	const result = await pool.query(query, values);
 	return result.rows[0];
 };
@@ -38,11 +54,35 @@ export const getFolderById = async (
 };
 
 // Get All Folders
-export const getAllFolders = async (): Promise<FileFolderData[]> => {
+export const getAllFolders = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<FileFolderData>> => {
 	const pool: Pool = await getDbConnection();
-	const query = `SELECT * FROM file_folders ORDER BY "createdAt" DESC`;
-	const result = await pool.query(query);
-	return result.rows;
+	const offset = (page - 1) * limit;
+
+	// Get total count
+	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders`;
+	const countResult = await pool.query(countQuery);
+	const total = countResult.rows[0].count;
+
+	// Get paginated data
+	const query = `SELECT * FROM file_folders WHERE "parentId" is null ORDER BY "createdAt" DESC LIMIT $1 OFFSET $2`;
+	const result = await pool.query(query, [limit, offset]);
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
 };
 
 // List all folders for a user
@@ -58,25 +98,72 @@ export const getFoldersByUser = async (
 // List all child folders for a parent
 export const getFoldersByParent = async (
 	parentId: string | null,
-	userId: string
-): Promise<FileFolderData[]> => {
+	userId: string,
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<FileFolderData>> => {
 	const pool: Pool = await getDbConnection();
-	const query = `SELECT * FROM file_folders WHERE "parentId" = $1 AND "userId" = $2 ORDER BY "createdAt" DESC`;
-	const result = await pool.query(query, [parentId, userId]);
-	return result.rows;
+	const offset = (page - 1) * limit;
+
+	// Get total count
+	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1 AND "userId" = $2`;
+	const countResult = await pool.query(countQuery, [parentId, userId]);
+	const total = countResult.rows[0].count;
+
+	// Get paginated data
+	const query = `SELECT * FROM file_folders WHERE "parentId" = $1 AND "userId" = $2 ORDER BY "createdAt" DESC LIMIT $3 OFFSET $4`;
+	const result = await pool.query(query, [parentId, userId, limit, offset]);
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
 };
 
 // Update a folder
 export const updateFolder = async (
 	id: string,
-	name: string
+	name?: string,
+	description?: string
 ): Promise<FileFolderData | null> => {
 	const pool: Pool = await getDbConnection();
+	const updates: string[] = [];
+	const values: any[] = [];
+	let paramCount = 1;
+
+	if (name !== undefined) {
+		updates.push(`name = $${paramCount}`);
+		values.push(name);
+		paramCount++;
+	}
+
+	if (description !== undefined) {
+		updates.push(`description = $${paramCount}`);
+		values.push(description);
+		paramCount++;
+	}
+
+	if (updates.length === 0) {
+		return null;
+	}
+
+	updates.push('"updatedAt" = NOW()');
+	values.push(id);
+
 	const query = `
-		UPDATE file_folders SET name = $1, "updatedAt" = NOW()
-		WHERE id = $2 RETURNING *;
+		UPDATE file_folders SET ${updates.join(', ')}
+		WHERE id = $${paramCount} RETURNING *;
 	`;
-	const result = await pool.query(query, [name, id]);
+	const result = await pool.query(query, values);
 	return result.rows[0] || null;
 };
 

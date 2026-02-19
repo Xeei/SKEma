@@ -56,7 +56,9 @@ export const createPostController = async (req: Request, res: Response) => {
 // Get all posts
 export const getAllPostsController = async (req: Request, res: Response) => {
 	try {
-		const posts = await getAllPosts();
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const posts = await getAllPosts(page, limit);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching posts:', err);
@@ -67,7 +69,9 @@ export const getAllPostsController = async (req: Request, res: Response) => {
 // Get public posts only
 export const getPublicPostsController = async (req: Request, res: Response) => {
 	try {
-		const posts = await getPublicPosts();
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const posts = await getPublicPosts(page, limit);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching public posts:', err);
@@ -326,7 +330,9 @@ export const getPostsByFolderController = async (
 ) => {
 	try {
 		const folderId = req.params.folderId as string;
-		const posts = await getPostsByFolder(folderId);
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const posts = await getPostsByFolder(folderId, page, limit);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching posts by folder:', err);

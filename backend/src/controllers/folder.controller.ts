@@ -11,11 +11,11 @@ import {
 
 export const createFolderController = async (req: Request, res: Response) => {
 	try {
-		const { name, parentId } = req.body;
+		const { name, parentId, description } = req.body;
 		const userId = req.user?.id;
 		if (!userId || !name)
 			return res.status(400).json({ error: 'Missing required fields' });
-		const folder = await createFolder(name, userId, parentId);
+		const folder = await createFolder(name, userId, parentId, description);
 		res.status(201).json(folder);
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to create folder' });
@@ -33,20 +33,18 @@ export const getFolderByIdController = async (req: Request, res: Response) => {
 	}
 };
 
-export const getAllFoldersController = async (
-	req: Request,
-	res: Response
-) => {
+export const getAllFoldersController = async (req: Request, res: Response) => {
 	try {
 		const userId = req.user?.id;
 		if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-		const folders = await getAllFolders();
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const folders = await getAllFolders(page, limit);
 		res.json(folders);
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to get folders' });
 	}
 };
-
 
 export const getFoldersByUserController = async (
 	req: Request,
@@ -70,7 +68,14 @@ export const getFoldersByParentController = async (
 		const userId = req.user?.id;
 		const parentId = req.params.parentId as string;
 		if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-		const folders = await getFoldersByParent(parentId || null, userId);
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const folders = await getFoldersByParent(
+			parentId || null,
+			userId,
+			page,
+			limit
+		);
 		res.json(folders);
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to get folders' });
@@ -80,9 +85,10 @@ export const getFoldersByParentController = async (
 export const updateFolderController = async (req: Request, res: Response) => {
 	try {
 		const id = req.params.id as string;
-		const { name } = req.body;
-		if (!name) return res.status(400).json({ error: 'Missing name' });
-		const folder = await updateFolder(id, name);
+		const { name, description } = req.body;
+		if (!name && description === undefined)
+			return res.status(400).json({ error: 'Missing fields to update' });
+		const folder = await updateFolder(id, name, description);
 		if (!folder) return res.status(404).json({ error: 'Folder not found' });
 		res.json(folder);
 	} catch (err) {
@@ -100,4 +106,3 @@ export const deleteFolderController = async (req: Request, res: Response) => {
 		res.status(500).json({ error: 'Failed to delete folder' });
 	}
 };
-

@@ -12,10 +12,12 @@ import {
 	createFolder,
 	getAllFolders,
 	deleteFolder,
+	PaginationMetadata,
 } from '@/services/folder.service';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
+import { Pagination } from '@/components/Pagination';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -31,16 +33,19 @@ export default function PublicFoldersPage() {
 	const [loading, setLoading] = useState(true);
 	const [creating, setCreating] = useState(false);
 	const [newFolderName, setNewFolderName] = useState('');
+	const [page, setPage] = useState(1);
+	const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
 
 	useEffect(() => {
 		loadFolders();
-	}, []);
+	}, [page]);
 
 	const loadFolders = async () => {
 		setLoading(true);
 		try {
-			const data = await getAllFolders();
-			setFolders(data);
+			const response = await getAllFolders(page, 12);
+			setFolders(response.data);
+			setPagination(response.pagination);
 		} catch (error) {
 			console.error('Error loading folders:', error);
 		} finally {
@@ -52,6 +57,7 @@ export default function PublicFoldersPage() {
 		setCreating(true);
 		try {
 			await createFolder(name, parentId);
+			setPage(1);
 			await loadFolders();
 			setNewFolderName('');
 		} catch (error) {
@@ -81,7 +87,7 @@ export default function PublicFoldersPage() {
 					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
 						Public Folders
 					</h1>
-					<CreatePostDialog onPostCreated={loadFolders} />
+					{/* <CreatePostDialog onPostCreated={loadFolders} /> */}
 				</div>
 				{loading ? (
 					<div className="flex items-center justify-center py-12">
@@ -136,6 +142,9 @@ export default function PublicFoldersPage() {
 												</Button>
 											)}
 										</div>
+										{folder.description && (
+											<p className="text-xs text-muted-foreground mt-2">{folder.description}</p>
+										)}
 									</CardHeader>
 									<CardContent>
 										<p className="text-muted-foreground text-xs">
@@ -145,6 +154,15 @@ export default function PublicFoldersPage() {
 								</Card>
 							))}
 						</div>
+						{pagination && (
+							<Pagination
+								currentPage={pagination.page}
+								totalPages={pagination.totalPages}
+								onPageChange={setPage}
+								hasNext={pagination.hasNext}
+								hasPrev={pagination.hasPrev}
+							/>
+						)}
 					</div>
 				)}
 			</div>
