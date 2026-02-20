@@ -199,7 +199,8 @@ export const deletePostController = async (req: Request, res: Response) => {
 			return res.status(404).json({ error: 'Post not found' });
 		}
 
-		if (existingPost.authorId !== userId) {
+		const isAdmin = req.user?.role === 'ADMIN';
+		if (existingPost.authorId !== userId && !isAdmin) {
 			return res.status(403).json({
 				error: 'Forbidden: You can only delete your own posts',
 			});

@@ -456,7 +456,7 @@ export default function FolderDetailPage() {
 													)}
 													<div className="flex items-center gap-3 mt-3 flex-wrap">
 														<span className="font-sarabun text-xs text-gray-400">
-															{post.authorName || post.authorEmail}
+													{post.isAnonymous ? 'Anonymous' : (post.authorName || post.authorEmail || 'Anonymous')}
 														</span>
 														<span className="text-gray-200">•</span>
 														<span className="font-sarabun text-xs text-gray-400">

@@ -18,7 +18,7 @@ router.post('/', createUserController);
 router.get('/', authMiddleware, getAllUsersController);
 
 // GET /api/v1/users/email?email=xxx - Get user by email
-router.get('/email', authMiddleware, getUserByEmailController);
+router.get('/email', getUserByEmailController);
 
 // GET /api/v1/users/:id - Get user by ID
 router.get('/:id', authMiddleware, getUserByIdController);

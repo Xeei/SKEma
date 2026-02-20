@@ -8,6 +8,7 @@ declare module 'express-serve-static-core' {
 			id: string;
 			email: string;
 			name?: string;
+			role?: string;
 		};
 	}
 }
@@ -45,6 +46,7 @@ export const authMiddleware = async (
 			sub?: string;
 			email?: string;
 			name?: string;
+			role?: string;
 		};
 
 		if (!decoded.sub || !decoded.email) {
@@ -58,6 +60,7 @@ export const authMiddleware = async (
 			id: decoded.sub,
 			email: decoded.email,
 			name: decoded.name,
+			role: decoded.role,
 		};
 
 		next();

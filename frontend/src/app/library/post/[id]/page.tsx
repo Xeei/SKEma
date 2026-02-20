@@ -180,9 +180,11 @@ export default function PostDetailPage() {
 						<ArrowLeft className="w-4 h-4" />
 						Back
 					</Button>
-					{session?.userId === post.authorId && (
+					{(session?.userId === post.authorId || session?.role === 'ADMIN') && (
 						<div className="flex gap-2">
-							<EditPostDialog post={post} onPostUpdated={loadPost} />
+							{session?.userId === post.authorId && (
+								<EditPostDialog post={post} onPostUpdated={loadPost} />
+							)}
 							<Button
 								variant="destructive"
 								onClick={handleDelete}
@@ -226,7 +228,11 @@ export default function PostDetailPage() {
 						<div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
 							<div className="flex items-center gap-2">
 								<User className="w-4 h-4" />
-								<span>{post.authorName || post.authorEmail}</span>
+								<span>
+									{post.isAnonymous
+										? 'Anonymous'
+										: post.authorName || post.authorEmail || 'Anonymous'}
+								</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<Calendar className="w-4 h-4" />
@@ -329,12 +335,12 @@ export default function PostDetailPage() {
 													<img
 														src={previewUrls[file.fileId]}
 														alt={file.originalName || file.filename}
-														className="max-h-[500px] max-w-full mx-auto rounded object-contain"
+														className="max-h-125 max-w-full mx-auto rounded object-contain"
 													/>
 												) : (
 													<iframe
 														src={previewUrls[file.fileId]}
-														className="w-full h-[600px] rounded border"
+														className="w-full h-150 rounded border"
 														title={file.originalName || file.filename}
 													/>
 												)}
