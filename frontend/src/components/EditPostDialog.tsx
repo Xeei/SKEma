@@ -13,8 +13,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit } from 'lucide-react';
-import { updatePost, PostData } from '@/services/post.service';
+import { Edit, Plus, X, FileIcon, Loader2 } from 'lucide-react';
+import {
+	updatePost,
+	PostData,
+	getPostFiles,
+	addFileToPost,
+	removeFileFromPost,
+	PostFileData,
+} from '@/services/post.service';
+import { uploadFile } from '@/services/file.service';
 
 interface EditPostDialogProps {
 	post: PostData;
@@ -32,6 +40,12 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 	const [tags, setTags] = useState(post.tags?.join(', ') || '');
 	const [privacy, setPrivacy] = useState<'PUBLIC' | 'PRIVATE' | 'SHARED'>(post.privacy);
 
+	// File management state
+	const [existingFiles, setExistingFiles] = useState<PostFileData[]>([]);
+	const [filesToRemove, setFilesToRemove] = useState<Set<string>>(new Set());
+	const [newFiles, setNewFiles] = useState<File[]>([]);
+	const [filesLoading, setFilesLoading] = useState(false);
+
 	// Update form when post prop changes
 	useEffect(() => {
 		setTitle(post.title);
@@ -42,6 +56,47 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 		setTags(post.tags?.join(', ') || '');
 		setPrivacy(post.privacy);
 	}, [post]);
+
+	// Load existing files when dialog opens
+	useEffect(() => {
+		if (open) {
+			setFilesLoading(true);
+			setFilesToRemove(new Set());
+			setNewFiles([]);
+			getPostFiles(post.id)
+				.then(setExistingFiles)
+				.catch(() => setExistingFiles([]))
+				.finally(() => setFilesLoading(false));
+		}
+	}, [open, post.id]);
+
+	const toggleRemoveFile = (postFileId: string) => {
+		setFilesToRemove((prev) => {
+			const next = new Set(prev);
+			if (next.has(postFileId)) {
+				next.delete(postFileId);
+			} else {
+				next.add(postFileId);
+			}
+			return next;
+		});
+	};
+
+	const handleNewFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files) {
+			const incoming = Array.from(e.target.files);
+			setNewFiles((prev) => {
+				const existingNames = new Set(prev.map((f) => f.name));
+				const unique = incoming.filter((f) => !existingNames.has(f.name));
+				return [...prev, ...unique];
+			});
+			e.target.value = '';
+		}
+	};
+
+	const removeNewFile = (index: number) => {
+		setNewFiles((prev) => prev.filter((_, i) => i !== index));
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -64,6 +119,21 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 					.filter((t) => t.length > 0),
 				privacy,
 			});
+
+			// Remove files marked for deletion
+			for (const postFileId of filesToRemove) {
+				const pf = existingFiles.find((f) => f.id === postFileId);
+				if (pf) {
+					await removeFileFromPost(post.id, pf.fileId);
+				}
+			}
+
+			// Upload and attach new files
+			const startOrder = existingFiles.filter((f) => !filesToRemove.has(f.id)).length;
+			for (let i = 0; i < newFiles.length; i++) {
+				const uploaded = await uploadFile(newFiles[i], undefined, undefined, 'PUBLIC');
+				await addFileToPost(post.id, uploaded.id, startOrder + i);
+			}
 
 			setOpen(false);
 			alert('Post updated successfully!');
@@ -174,6 +244,104 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 							<option value="PRIVATE">Private</option>
 							<option value="SHARED">Shared</option>
 						</select>
+					</div>
+
+					{/* File Management */}
+					<div>
+						<label className="text-sm font-medium">Attached Files</label>
+
+						{filesLoading ? (
+							<div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+								<Loader2 className="w-4 h-4 animate-spin" />
+								Loading files…
+							</div>
+						) : (
+							<>
+								{/* Existing files */}
+								{existingFiles.length > 0 && (
+									<ul className="mt-2 space-y-1">
+										{existingFiles.map((pf) => {
+											const markedForRemoval = filesToRemove.has(pf.id);
+											return (
+												<li
+													key={pf.id}
+													className={`flex items-center justify-between gap-2 border rounded px-3 py-1.5 text-sm transition-colors ${
+														markedForRemoval
+															? 'bg-red-50 border-red-200 line-through text-muted-foreground'
+															: 'bg-muted/50'
+													}`}
+												>
+													<div className="flex items-center gap-2 min-w-0">
+														<FileIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+														<span className="truncate">{pf.originalName || pf.filename}</span>
+														{pf.size && (
+															<span className="text-xs text-muted-foreground shrink-0">
+																({(pf.size / 1024).toFixed(1)} KB)
+															</span>
+														)}
+													</div>
+													<button
+														type="button"
+														onClick={() => toggleRemoveFile(pf.id)}
+														disabled={loading}
+														className={`shrink-0 transition-colors ${
+															markedForRemoval
+																? 'text-blue-500 hover:text-blue-700 text-xs font-medium'
+																: 'text-muted-foreground hover:text-destructive'
+														}`}
+													>
+														{markedForRemoval ? 'Undo' : <X className="w-4 h-4" />}
+													</button>
+												</li>
+											);
+										})}
+									</ul>
+								)}
+
+								{/* New files to add */}
+								{newFiles.length > 0 && (
+									<ul className="mt-2 space-y-1">
+										{newFiles.map((file, i) => (
+											<li
+												key={i}
+												className="flex items-center justify-between gap-2 border rounded px-3 py-1.5 text-sm bg-green-50 border-green-200"
+											>
+												<div className="flex items-center gap-2 min-w-0">
+													<FileIcon className="w-4 h-4 shrink-0 text-green-600" />
+													<span className="truncate">{file.name}</span>
+													<span className="text-xs text-muted-foreground shrink-0">
+														({(file.size / 1024).toFixed(1)} KB)
+													</span>
+												</div>
+												<button
+													type="button"
+													onClick={() => removeNewFile(i)}
+													disabled={loading}
+													className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+												>
+													<X className="w-4 h-4" />
+												</button>
+											</li>
+										))}
+									</ul>
+								)}
+
+								{/* Add files button */}
+								<label className="mt-2 flex items-center gap-2 w-fit cursor-pointer">
+									<span className="border rounded px-3 py-1.5 text-sm bg-muted hover:bg-accent transition-colors flex items-center gap-2">
+										<Plus className="w-4 h-4" />
+										Add Files
+									</span>
+									<input
+										type="file"
+										multiple
+										onChange={handleNewFileChange}
+										disabled={loading}
+										className="hidden"
+									/>
+								</label>
+							</>
+						)}
 					</div>
 
 					<DialogFooter>

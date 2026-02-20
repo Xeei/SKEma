@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createPost, addFileToPost } from '@/services/post.service';
 import { uploadFile } from '@/services/file.service';
-import { Plus } from 'lucide-react';
+import { Plus, X, FileIcon } from 'lucide-react';
 
 interface CreatePostDialogProps {
 	onPostCreated?: () => void;
@@ -77,8 +77,19 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
-			setSelectedFiles(Array.from(e.target.files));
+			const incoming = Array.from(e.target.files);
+			setSelectedFiles((prev) => {
+				const existingNames = new Set(prev.map((f) => f.name));
+				const unique = incoming.filter((f) => !existingNames.has(f.name));
+				return [...prev, ...unique];
+			});
+			// Reset input so the same file can be re-added after removal
+			e.target.value = '';
 		}
+	};
+
+	const removeSelectedFile = (index: number) => {
+		setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
 	};
 
 	return (
@@ -167,17 +178,44 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 
 					<div>
 						<label className="text-sm font-medium">Attach Files</label>
-						<input
-							type="file"
-							multiple
-							onChange={handleFileChange}
-							disabled={loading}
-							className="w-full border rounded px-3 py-2 text-sm"
-						/>
+						<label className="mt-1 flex items-center gap-2 w-fit cursor-pointer">
+							<span className="border rounded px-3 py-1.5 text-sm bg-muted hover:bg-accent transition-colors flex items-center gap-2">
+								<Plus className="w-4 h-4" />
+								Add Files
+							</span>
+							<input
+								type="file"
+								multiple
+								onChange={handleFileChange}
+								disabled={loading}
+								className="hidden"
+							/>
+						</label>
 						{selectedFiles.length > 0 && (
-							<p className="text-xs text-muted-foreground mt-1">
-								{selectedFiles.length} file(s) selected
-							</p>
+							<ul className="mt-2 space-y-1">
+								{selectedFiles.map((file, i) => (
+									<li
+										key={i}
+										className="flex items-center justify-between gap-2 border rounded px-3 py-1.5 text-sm bg-muted/50"
+									>
+										<div className="flex items-center gap-2 min-w-0">
+											<FileIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+											<span className="truncate">{file.name}</span>
+											<span className="text-xs text-muted-foreground shrink-0">
+												({(file.size / 1024).toFixed(1)} KB)
+											</span>
+										</div>
+										<button
+											type="button"
+											onClick={() => removeSelectedFile(i)}
+											disabled={loading}
+											className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+										>
+											<X className="w-4 h-4" />
+										</button>
+									</li>
+								))}
+							</ul>
 						)}
 					</div>
 

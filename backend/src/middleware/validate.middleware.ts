@@ -33,8 +33,11 @@ export const validateQuery =
 				details: formatZodError(result.error),
 			});
 		}
-		// @ts-expect-error – replace parsed query
-		req.query = result.data;
+		Object.defineProperty(req, 'query', {
+			value: result.data,
+			writable: true,
+			configurable: true,
+		});
 		next();
 	};
 
