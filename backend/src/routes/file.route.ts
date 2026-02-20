@@ -1,6 +1,8 @@
 import express from 'express';
 import { upload } from '../config/upload';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { validateBody } from '../middleware/validate.middleware';
+import { uploadFileBodySchema } from '../schemas';
 import {
 	uploadFileController,
 	getAllFilesController,
@@ -14,7 +16,7 @@ import {
 const router = express.Router();
 
 // Upload file (requires authentication)
-router.post('/', authMiddleware, upload.single('file'), uploadFileController);
+router.post('/', authMiddleware, upload.single('file'), validateBody(uploadFileBodySchema), uploadFileController);
 
 // Get all files
 router.get('/', getAllFilesController);

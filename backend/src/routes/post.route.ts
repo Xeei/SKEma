@@ -1,5 +1,11 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { validateBody, validateQuery } from '../middleware/validate.middleware';
+import {
+	createPostSchema,
+	updatePostSchema,
+	paginationSchema,
+} from '../schemas';
 import {
 	createPostController,
 	getAllPostsController,
@@ -19,10 +25,19 @@ import {
 const router = express.Router();
 
 // Public routes (no auth required)
-router.get('/public', getPublicPostsController);
+router.get(
+	'/public',
+	validateQuery(paginationSchema),
+	getPublicPostsController
+);
 
 // Get all posts (requires auth)
-router.get('/all', authMiddleware, getAllPostsController);
+router.get(
+	'/all',
+	authMiddleware,
+	validateQuery(paginationSchema),
+	getAllPostsController
+);
 
 // Get posts by specific author
 router.get('/author/:authorId', authMiddleware, getPostsByAuthorController);
@@ -40,10 +55,20 @@ router.get('/:id', authMiddleware, getPostByIdController);
 router.get('/:id/files', authMiddleware, getPostFilesController);
 
 // Create new post
-router.post('/', authMiddleware, createPostController);
+router.post(
+	'/',
+	authMiddleware,
+	validateBody(createPostSchema),
+	createPostController
+);
 
 // Update post
-router.patch('/:id', authMiddleware, updatePostController);
+router.patch(
+	'/:id',
+	authMiddleware,
+	validateBody(updatePostSchema),
+	updatePostController
+);
 
 // Delete post
 router.delete('/:id', authMiddleware, deletePostController);

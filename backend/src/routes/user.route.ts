@@ -7,20 +7,21 @@ import {
 	getUserByEmailController,
 	getAllUsersController,
 } from '../controllers/user.controller';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// POST /api/v1/users - Create a new user
+// POST /api/v1/users - Create a new user (called server-side by NextAuth on sign-in)
 router.post('/', createUserController);
 
 // GET /api/v1/users - Get all users
-router.get('/', getAllUsersController);
+router.get('/', authMiddleware, getAllUsersController);
 
 // GET /api/v1/users/email?email=xxx - Get user by email
-router.get('/email', getUserByEmailController);
+router.get('/email', authMiddleware, getUserByEmailController);
 
 // GET /api/v1/users/:id - Get user by ID
-router.get('/:id', getUserByIdController);
+router.get('/:id', authMiddleware, getUserByIdController);
 
 // PATCH /api/v1/users/:id - Update user
 // router.patch('/:id', updateUserController);

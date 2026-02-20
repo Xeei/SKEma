@@ -11,6 +11,38 @@ import {
 import fs from 'fs';
 import path from 'path';
 
+// Allowed MIME types mapped from magic byte detection
+const ALLOWED_MIME_TYPES = new Set([
+	'application/pdf',
+	'application/msword',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.ms-excel',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+	'application/vnd.ms-powerpoint',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	'application/zip',
+	'image/jpeg',
+	'image/png',
+	'image/gif',
+	'image/webp',
+]);
+
+// MIME types that file-type cannot detect (text-based) — trust multer's filter
+const TEXT_BASED_MIME_TYPES = new Set([
+	'text/plain',
+	'text/csv',
+	'text/x-python',
+	'text/x-python-script',
+	'application/x-python-code',
+	'text/x-c',
+	'text/x-csrc',
+	'text/x-chdr',
+	'text/x-c++src',
+	'text/x-c++hdr',
+	'text/x-asm',
+	'text/x-assembler',
+]);
+
 // Upload file controller
 export const uploadFileController = async (
 	req: Request,
@@ -29,6 +61,21 @@ export const uploadFileController = async (
 			fs.unlinkSync(req.file.path);
 			res.status(401).json({ error: 'Unauthorized' });
 			return;
+		}
+
+		// Validate actual file content via magic bytes (ESM dynamic import)
+		if (!TEXT_BASED_MIME_TYPES.has(req.file.mimetype)) {
+			const { fileTypeFromStream } = await import('file-type');
+			const stream = fs.createReadStream(req.file.path);
+			const detected = await fileTypeFromStream(stream);
+
+			if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
+				fs.unlinkSync(req.file.path);
+				res.status(400).json({
+					error: 'File content does not match its declared type. Upload rejected.',
+				});
+				return;
+			}
 		}
 
 		// Get optional folderId and privacy from request body
@@ -102,7 +149,6 @@ export const downloadFileController = async (
 ): Promise<void> => {
 	try {
 		console.log('Download request received for ID:', req.params.id);
-		console.log('Authorization header:', req.headers.authorization);
 
 		const id = req.params.id as string;
 		const file = await getFileById(id);
