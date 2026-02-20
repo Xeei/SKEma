@@ -1,6 +1,6 @@
 # SKE-Schema
 
-A dedicated file-sharing platform for the SKE-22 cohort to collaborate and exchange academic resources.
+A dedicated **Open Source** file-sharing platform for the SKE-22 cohort to collaborate and exchange academic resources.
 
 ## Overview
 SKE-Schema is designed to facilitate peer-to-peer support by providing a centralized space for students to share materials, discuss assignments, and track community contributions.
