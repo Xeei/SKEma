@@ -1,6 +1,8 @@
 'use client';
 
+import { Suspense } from 'react';
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sarabun } from 'next/font/google';
@@ -12,9 +14,12 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
-export default function SignInPage() {
+function SignInContent() {
+	const searchParams = useSearchParams();
+	const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+
 	const handleGoogleSignIn = async () => {
-		await signIn('google', { callbackUrl: '/' });
+		await signIn('google', { callbackUrl });
 	};
 
 	return (
@@ -72,5 +77,13 @@ export default function SignInPage() {
 				</Card>
 			</div>
 		</main>
+	);
+}
+
+export default function SignInPage() {
+	return (
+		<Suspense>
+			<SignInContent />
+		</Suspense>
 	);
 }
