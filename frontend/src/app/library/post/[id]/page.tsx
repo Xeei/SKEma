@@ -14,8 +14,33 @@ import {
 	deletePost,
 } from '@/services/post.service';
 import { downloadFile } from '@/services/file.service';
-import { Download, ArrowLeft, Calendar, User, Eye, Lock, Globe, Users, Trash2 } from 'lucide-react';
+import {
+	Download,
+	ArrowLeft,
+	Calendar,
+	User,
+	Eye,
+	Lock,
+	Globe,
+	Users,
+	Trash2,
+	MoreHorizontalIcon,
+} from 'lucide-react';
 import { EditPostDialog } from '@/components/EditPostDialog';
+import { ButtonGroup } from '@/components/ui/button-group';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -182,10 +207,37 @@ export default function PostDetailPage() {
 					</Button>
 					{(session?.userId === post.authorId || session?.role === 'ADMIN') && (
 						<div className="flex gap-2">
-							{session?.userId === post.authorId && (
-								<EditPostDialog post={post} onPostUpdated={loadPost} />
-							)}
-							<Button
+							<ButtonGroup>
+								<DropdownMenu>
+									<DropdownMenuTrigger>
+										<Button variant="outline" size="icon" aria-label="More Options">
+											<MoreHorizontalIcon />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="w-40">
+										<DropdownMenuGroup>
+											{session?.userId === post.authorId && (
+												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+													<EditPostDialog post={post} onPostUpdated={loadPost} asMenuItem />
+												</DropdownMenuItem>
+											)}
+											{(session?.userId === post.authorId || session?.role === 'ADMIN') && (
+												<DropdownMenuItem
+													variant="destructive"
+													onClick={handleDelete}
+													disabled={deleting}
+													className="flex items-center gap-2"
+												>
+													{' '}
+													<Trash2 className="w-4 h-4" />
+													{deleting ? 'Deleting...' : 'Delete Post'}
+												</DropdownMenuItem>
+											)}
+										</DropdownMenuGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ButtonGroup>
+							{/* <Button
 								variant="destructive"
 								onClick={handleDelete}
 								disabled={deleting}
@@ -193,7 +245,7 @@ export default function PostDetailPage() {
 							>
 								<Trash2 className="w-4 h-4" />
 								{deleting ? 'Deleting...' : 'Delete Post'}
-							</Button>
+							</Button> */}
 						</div>
 					)}
 				</div>

@@ -150,7 +150,7 @@ export default function FolderDetailPage() {
 
 	const loadPosts = async (page: number = 1) => {
 		try {
-			const response = await getPostsByFolder(folderId, page, 10);
+			const response = await getPostsByFolder(folderId, page, 4);
 			setPosts(response.data);
 			setPostsPagination(response.pagination);
 		} catch {
@@ -279,9 +279,9 @@ export default function FolderDetailPage() {
 									{subfolders.length} โฟลเดอร์ย่อย
 								</div>
 							)}
-							{posts.length > 0 && (
+							{(postsPagination?.total ?? 0) > 0 && (
 								<div className="bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm font-sarabun text-white/80">
-									{posts.length} โพสต์
+									{postsPagination!.total} โพสต์
 								</div>
 							)}
 						</div>
@@ -456,7 +456,9 @@ export default function FolderDetailPage() {
 													)}
 													<div className="flex items-center gap-3 mt-3 flex-wrap">
 														<span className="font-sarabun text-xs text-gray-400">
-													{post.isAnonymous ? 'Anonymous' : (post.authorName || post.authorEmail || 'Anonymous')}
+															{post.isAnonymous
+																? 'Anonymous'
+																: post.authorName || post.authorEmail || 'Anonymous'}
 														</span>
 														<span className="text-gray-200">•</span>
 														<span className="font-sarabun text-xs text-gray-400">
@@ -499,6 +501,8 @@ export default function FolderDetailPage() {
 										onPageChange={setPostsPage}
 										hasNext={postsPagination.hasNext}
 										hasPrev={postsPagination.hasPrev}
+										total={postsPagination.total}
+										limit={postsPagination.limit}
 									/>
 								</div>
 							)}

@@ -6,14 +6,27 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sarabun } from 'next/font/google';
-import { CheckCircle, XCircle, Clock, FileText, User, Calendar } from 'lucide-react';
+import {
+	CheckCircle,
+	XCircle,
+	Clock,
+	FileText,
+	User,
+	Calendar,
+	Download,
+	ChevronDown,
+	ChevronUp,
+} from 'lucide-react';
 import {
 	getPendingPosts,
 	approvePost,
 	rejectPost,
+	getPostFiles,
 	PostData,
+	PostFileData,
 	PaginatedResponse,
 } from '@/services/post.service';
+import { downloadFile, formatFileSize, getFileIcon } from '@/services/file.service';
 import { Pagination } from '@/components/Pagination';
 
 const sarabun = Sarabun({
@@ -31,6 +44,10 @@ export default function AdminPendingPostsPage() {
 	const [actionLoading, setActionLoading] = useState<string | null>(null);
 	const [page, setPage] = useState(1);
 	const limit = 10;
+	const [postFiles, setPostFiles] = useState<Record<string, PostFileData[]>>({});
+	const [loadingFiles, setLoadingFiles] = useState<Record<string, boolean>>({});
+	const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({});
+	const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
@@ -82,6 +99,34 @@ export default function AdminPendingPostsPage() {
 			alert('Failed to reject post');
 		} finally {
 			setActionLoading(null);
+		}
+	};
+
+	const handleToggleFiles = async (postId: string) => {
+		const nowExpanded = !expandedFiles[postId];
+		setExpandedFiles((prev) => ({ ...prev, [postId]: nowExpanded }));
+		if (nowExpanded && !postFiles[postId]) {
+			setLoadingFiles((prev) => ({ ...prev, [postId]: true }));
+			try {
+				const files = await getPostFiles(postId);
+				setPostFiles((prev) => ({ ...prev, [postId]: files }));
+			} catch (error) {
+				console.error('Error loading post files:', error);
+			} finally {
+				setLoadingFiles((prev) => ({ ...prev, [postId]: false }));
+			}
+		}
+	};
+
+	const handleDownload = async (fileId: string, filename: string) => {
+		setDownloadingFile(fileId);
+		try {
+			await downloadFile(fileId, filename);
+		} catch (error) {
+			console.error('Error downloading file:', error);
+			alert('Failed to download file');
+		} finally {
+			setDownloadingFile(null);
 		}
 	};
 
@@ -217,6 +262,67 @@ export default function AdminPendingPostsPage() {
 										>
 											{post.link}
 										</a>
+									)}
+									{post.fileCount != null && post.fileCount > 0 && (
+										<div className="mt-3 border-t pt-3">
+											<button
+												className="flex items-center gap-1.5 text-sm font-medium text-[#006837] hover:underline"
+												onClick={() => handleToggleFiles(post.id)}
+											>
+												<FileText className="h-4 w-4" />
+												{expandedFiles[post.id] ? 'Hide' : 'View'} attachments ({post.fileCount})
+												{expandedFiles[post.id] ? (
+													<ChevronUp className="h-3.5 w-3.5" />
+												) : (
+													<ChevronDown className="h-3.5 w-3.5" />
+												)}
+											</button>
+											{expandedFiles[post.id] && (
+												<div className="mt-2 space-y-1.5">
+													{loadingFiles[post.id] ? (
+														<p className="text-xs text-muted-foreground">Loading files…</p>
+													) : (postFiles[post.id] ?? []).length === 0 ? (
+														<p className="text-xs text-muted-foreground">No files found.</p>
+													) : (
+														(postFiles[post.id] ?? []).map((pf) => {
+															const name = pf.originalName || pf.filename || 'file';
+															const icon = pf.mimetype ? getFileIcon(pf.mimetype) : '📎';
+															const size = pf.size ? formatFileSize(pf.size) : '';
+															return (
+																<div
+																	key={pf.fileId}
+																	className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+																>
+																	<span className="flex items-center gap-2 truncate">
+																		<span>{icon}</span>
+																		<span className="truncate font-medium">{name}</span>
+																		{size && (
+																			<span className="shrink-0 text-xs text-muted-foreground">
+																				{size}
+																			</span>
+																		)}
+																	</span>
+																	<Button
+																		size="sm"
+																		variant="outline"
+																		className="shrink-0 gap-1 h-7 px-2 text-xs"
+																		disabled={downloadingFile === pf.fileId}
+																		onClick={() => handleDownload(pf.fileId, name)}
+																	>
+																		{downloadingFile === pf.fileId ? (
+																			<span className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+																		) : (
+																			<Download className="h-3 w-3" />
+																		)}
+																		Download
+																	</Button>
+																</div>
+															);
+														})
+													)}
+												</div>
+											)}
+										</div>
 									)}
 								</CardContent>
 							</Card>

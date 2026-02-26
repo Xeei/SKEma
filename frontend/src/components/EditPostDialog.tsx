@@ -27,9 +27,10 @@ import { uploadFile } from '@/services/file.service';
 interface EditPostDialogProps {
 	post: PostData;
 	onPostUpdated?: () => void;
+	asMenuItem?: boolean;
 }
 
-export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
+export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: EditPostDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [title, setTitle] = useState(post.title);
@@ -149,10 +150,17 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-2 py-4">
-					<Edit className="w-4 h-4" />
-					Edit Post
-				</Button>
+				{asMenuItem ? (
+					<span className="flex w-full cursor-pointer items-center gap-2">
+						<Edit className="w-4 h-4" />
+						Edit Post
+					</span>
+				) : (
+					<Button variant="outline" size="sm" className="gap-2 py-4">
+						<Edit className="w-4 h-4" />
+						Edit Post
+					</Button>
+				)}
 			</DialogTrigger>
 			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
@@ -210,7 +218,7 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 						/>
 					</div>
 
-					<div>
+					{/* <div>
 						<label className="text-sm font-medium">Category</label>
 						<Input
 							type="text"
@@ -244,7 +252,7 @@ export function EditPostDialog({ post, onPostUpdated }: EditPostDialogProps) {
 							<option value="PRIVATE">Private</option>
 							<option value="SHARED">Shared</option>
 						</select>
-					</div>
+					</div> */}
 
 					{/* File Management */}
 					<div>
