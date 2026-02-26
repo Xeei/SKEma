@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -6,15 +7,18 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
 import { authMiddleware } from './middleware/auth.middleware';
+import { initSocket } from './socket';
 
 import userRouter from './routes/user.route';
 import fileRouter from './routes/file.route';
 import folderRoute from './routes/folder.route';
 import fileshareRouter from './routes/fileshare.route';
 import postRouter from './routes/post.route';
+import notificationRouter from './routes/notification.route';
 
 // Initialize Express app
 const app: Express = express();
+const httpServer = http.createServer(app);
 const PORT = env.port;
 
 /**
@@ -80,6 +84,7 @@ function configureRoutes(app: Express): void {
 	apiV1Router.use('/folders', folderRoute);
 	apiV1Router.use('/fileshare', fileshareRouter);
 	apiV1Router.use('/posts', postRouter);
+	apiV1Router.use('/notifications', notificationRouter);
 
 	// Mount v1 API router
 	app.use('/api/v1', apiV1Router);
@@ -120,7 +125,7 @@ function configureRoutes(app: Express): void {
  * Start the server
  */
 function startServer(): void {
-	app.listen(PORT, () => {
+	httpServer.listen(PORT, () => {
 		console.log(`🌐 Server running on http://localhost:${PORT}`);
 		console.log(`📝 Environment: ${env.nodeEnv}`);
 	});
@@ -129,4 +134,5 @@ function startServer(): void {
 // Initialize application
 configureMiddleware(app);
 configureRoutes(app);
+initSocket(httpServer);
 startServer();

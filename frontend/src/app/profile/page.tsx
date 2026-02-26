@@ -169,7 +169,7 @@ export default function ProfilePage() {
 					<div>
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="font-sarabun text-lg font-semibold text-gray-800">โพสต์ทั้งหมด</h2>
-							<CreatePostDialog onPostCreated={() => loadPosts(1)} />
+							{/* <CreatePostDialog onPostCreated={() => loadPosts(1)} /> */}
 						</div>
 
 						{loading ? (

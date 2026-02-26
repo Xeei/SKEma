@@ -2,7 +2,8 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -13,31 +14,21 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getPendingPosts } from '@/services/post.service';
+import { useNotifications } from '@/context/NotificationContext';
+import { NotificationPanel } from '@/components/NotificationPanel';
 
 export function Header() {
 	const { data: session, status } = useSession();
-	const [pendingCount, setPendingCount] = useState(0);
+	const { unreadCount, notifications } = useNotifications();
+	const [panelOpen, setPanelOpen] = useState(false);
 
 	const isPrivileged = session?.role === 'ADMIN' || session?.role === 'TRUSTED';
 
-	useEffect(() => {
-		if (!isPrivileged) return;
-
-		const fetchCount = async () => {
-			try {
-				const result = await getPendingPosts(1, 1);
-				setPendingCount(result.pagination.total);
-			} catch {
-				// silently ignore – badge just won't show
-			}
-		};
-
-		fetchCount();
-		// Refresh every 60 s while the tab is open
-		const interval = setInterval(fetchCount, 60_000);
-		return () => clearInterval(interval);
-	}, [isPrivileged]);
+	// Count of unread "new pending post" notifications — used on the admin quick-link bell
+	const pendingUnread = useMemo(
+		() => notifications.filter((n) => n.type === 'NEW_POST_PENDING' && !n.isRead).length,
+		[notifications]
+	);
 
 	return (
 		<header className="bg-[#006837] text-white py-4 px-6 shadow-lg">
@@ -55,7 +46,8 @@ export function Header() {
 				{status === 'loading' ? (
 					<div className="w-10 h-10 rounded-full bg-white/20 animate-pulse" />
 				) : status === 'authenticated' && session?.user ? (
-					<div className="flex items-center gap-7">
+					<div className="flex items-center gap-3">
+						{/* Admin quick-link bell — shows pending count badge
 						{isPrivileged && (
 							<Link
 								href="/admin/pending"
@@ -75,13 +67,32 @@ export function Header() {
 									<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
 									<path d="M13.73 21a2 2 0 0 1-3.46 0" />
 								</svg>
-								{pendingCount > 0 && (
+								{pendingUnread > 0 && (
 									<span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#006837]">
-										{pendingCount > 99 ? '99+' : pendingCount}
+										{pendingUnread > 99 ? '99+' : pendingUnread}
 									</span>
 								)}
 							</Link>
-						)}
+						)} */}
+
+						{/* General notification bell — opens slide-in panel */}
+						<div className="relative">
+							<button
+								onClick={() => setPanelOpen((o) => !o)}
+								className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-colors"
+								title="การแจ้งเตือน"
+							>
+								<Bell className="h-5 w-5 text-white" />
+								{unreadCount > 0 && (
+									<span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#006837]">
+										{unreadCount > 99 ? '99+' : unreadCount}
+									</span>
+								)}
+							</button>
+							<NotificationPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+						</div>
+
+						{/* Avatar dropdown */}
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="secondary" className="relative h-10 w-10 rounded-full">
@@ -91,11 +102,6 @@ export function Header() {
 											{session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
 										</AvatarFallback>
 									</Avatar>
-									{isPrivileged && pendingCount > 0 && (
-										<span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#006837]">
-											{pendingCount > 99 ? '99+' : pendingCount}
-										</span>
-									)}
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="w-56 mt-8">

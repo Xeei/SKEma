@@ -19,6 +19,12 @@ import {
 	approvePost,
 	rejectPost,
 } from '../models/post.model';
+import {
+	createNotification,
+	createNotificationsForMany,
+	getPrivilegedUserIds,
+} from '../models/notification.model';
+import { getIO } from '../socket';
 
 // Create a new post
 export const createPostController = async (req: Request, res: Response) => {
@@ -61,6 +67,31 @@ export const createPostController = async (req: Request, res: Response) => {
 			isAnonymous ?? false,
 			status
 		);
+
+		// Notify privileged users about a new pending post
+		if (status === 'PENDING') {
+			try {
+				const message = `โพสต์ใหม่รอตรวจสอบ: "${title}"`;
+				const privilegedIds = await getPrivilegedUserIds();
+				await createNotificationsForMany(
+					privilegedIds,
+					'NEW_POST_PENDING',
+					message,
+					post.id
+				);
+				const socketIO = getIO();
+				if (socketIO) {
+					socketIO.to('privileged').emit('notification', {
+						type: 'NEW_POST_PENDING',
+						message,
+						postId: post.id,
+						createdAt: new Date().toISOString(),
+					});
+				}
+			} catch (notifErr) {
+				console.error('Notification error (non-fatal):', notifErr);
+			}
+		}
 
 		res.status(201).json(post);
 	} catch (err) {
@@ -421,6 +452,29 @@ export const approvePostController = async (req: Request, res: Response) => {
 		}
 
 		const updated = await approvePost(id);
+
+		// Notify the post author
+		try {
+			const message = `โพสต์ของคุณ "${post.title}" ได้รับการอนุมัติแล้ว`;
+			await createNotification(
+				post.authorId,
+				'POST_APPROVED',
+				message,
+				post.id
+			);
+			const socketIO = getIO();
+			if (socketIO) {
+				socketIO.to(`user:${post.authorId}`).emit('notification', {
+					type: 'POST_APPROVED',
+					message,
+					postId: post.id,
+					createdAt: new Date().toISOString(),
+				});
+			}
+		} catch (notifErr) {
+			console.error('Notification error (non-fatal):', notifErr);
+		}
+
 		res.json(updated);
 	} catch (err) {
 		console.error('Error approving post:', err);
@@ -451,6 +505,29 @@ export const rejectPostController = async (req: Request, res: Response) => {
 		}
 
 		const updated = await rejectPost(id);
+
+		// Notify the post author
+		try {
+			const message = `โพสต์ของคุณ "${post.title}" ถูกปฏิเสธ`;
+			await createNotification(
+				post.authorId,
+				'POST_REJECTED',
+				message,
+				post.id
+			);
+			const socketIO = getIO();
+			if (socketIO) {
+				socketIO.to(`user:${post.authorId}`).emit('notification', {
+					type: 'POST_REJECTED',
+					message,
+					postId: post.id,
+					createdAt: new Date().toISOString(),
+				});
+			}
+		} catch (notifErr) {
+			console.error('Notification error (non-fatal):', notifErr);
+		}
+
 		res.json(updated);
 	} catch (err) {
 		console.error('Error rejecting post:', err);

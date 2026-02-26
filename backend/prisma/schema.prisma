@@ -36,6 +36,7 @@ model User {
   sharedFiles FileShare[]
   folders FileFolder[]
   posts     Post[]   @relation("PostAuthor")
+  notifications Notification[]
 
   @@map("users")
 }
@@ -158,4 +159,18 @@ model PostFile {
   
   @@unique([postId, fileId])
   @@map("post_files")
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  postId    String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([userId])
+  @@map("notifications")
 }
