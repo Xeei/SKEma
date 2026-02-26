@@ -15,7 +15,13 @@ enum PrivacyLevel {
 enum RoleLevel {
   STANDARD
   ADMIN
-  TESTER
+  TRUSTED
+}
+
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -116,6 +122,9 @@ model Post {
   
   // Anonymous posting
   isAnonymous Boolean      @default(false)
+
+  // Approval status
+  status      PostStatus   @default(APPROVED)
 
   // Privacy and engagement
   privacy     PrivacyLevel @default(PUBLIC)

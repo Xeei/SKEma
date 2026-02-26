@@ -12,6 +12,7 @@ export interface PostData {
 	link?: string | null;
 	authorId: string;
 	privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
+	status: 'PENDING' | 'APPROVED' | 'REJECTED';
 	views: number;
 	category?: string | null;
 	tags: string[];
@@ -114,6 +115,31 @@ export const getMyPosts = async (): Promise<PostData[]> => {
 	return data;
 };
 
+export interface PaginationMeta {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export interface PaginatedPostsResponse {
+	data: PostData[];
+	pagination: PaginationMeta;
+}
+
+// Get current user's approved posts with server-side pagination
+export const getMyApprovedPostsPaginated = async (
+	page: number = 1,
+	limit: number = 5
+): Promise<PaginatedPostsResponse> => {
+	const { data } = await instance.get('/my-posts', {
+		params: { status: 'APPROVED', page, limit },
+	});
+	return data;
+};
+
 // Update post
 export const updatePost = async (
 	id: string,
@@ -157,4 +183,25 @@ export const updateFileOrder = async (
 	order: number
 ): Promise<void> => {
 	await instance.patch(`/${postId}/files/${fileId}/order`, { order });
+};
+
+// Get pending posts (admin only)
+export const getPendingPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostData>> => {
+	const { data } = await instance.get('/admin/pending', { params: { page, limit } });
+	return data;
+};
+
+// Approve a post (admin only)
+export const approvePost = async (id: string): Promise<PostData> => {
+	const { data } = await instance.patch(`/${id}/approve`);
+	return data;
+};
+
+// Reject a post (admin only)
+export const rejectPost = async (id: string): Promise<PostData> => {
+	const { data } = await instance.patch(`/${id}/reject`);
+	return data;
 };

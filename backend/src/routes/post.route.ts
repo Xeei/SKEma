@@ -20,6 +20,9 @@ import {
 	getPostFilesController,
 	updateFileOrderController,
 	getPostsByFolderController,
+	getPendingPostsController,
+	approvePostController,
+	rejectPostController,
 } from '../controllers/post.controller';
 
 const router = express.Router();
@@ -47,6 +50,16 @@ router.get('/folder/:folderId', authMiddleware, getPostsByFolderController);
 
 // Get current user's posts
 router.get('/my-posts', authMiddleware, getMyPostsController);
+
+// ── Admin-only: post approval ─────────────────────────────────────────────────
+
+// Get all pending posts
+router.get(
+	'/admin/pending',
+	authMiddleware,
+	validateQuery(paginationSchema),
+	getPendingPostsController
+);
 
 // Get specific post by ID
 router.get('/:id', authMiddleware, getPostByIdController);
@@ -89,5 +102,11 @@ router.patch(
 	authMiddleware,
 	updateFileOrderController
 );
+
+// Approve a post
+router.patch('/:id/approve', authMiddleware, approvePostController);
+
+// Reject a post
+router.patch('/:id/reject', authMiddleware, rejectPostController);
 
 export default router;

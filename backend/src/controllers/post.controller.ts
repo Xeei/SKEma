@@ -4,6 +4,8 @@ import {
 	getAllPosts,
 	getPostById,
 	getPostsByAuthor,
+	getPostsByAuthorAllStatuses,
+	getApprovedPostsByAuthorPaginated,
 	getPublicPosts,
 	updatePost,
 	deletePost,
@@ -13,6 +15,9 @@ import {
 	getPostFiles,
 	updateFileOrder,
 	getPostsByFolder,
+	getPendingPosts,
+	approvePost,
+	rejectPost,
 } from '../models/post.model';
 
 // Create a new post
@@ -35,6 +40,14 @@ export const createPostController = async (req: Request, res: Response) => {
 			return res.status(400).json({ error: 'Missing required fields' });
 		}
 
+		// Determine post status based on user role
+		// ADMIN and TRUSTED users get approved immediately; STANDARD users need approval
+		const userRole = req.user?.role;
+		const status =
+			userRole === 'ADMIN' || userRole === 'TRUSTED'
+				? 'APPROVED'
+				: 'PENDING';
+
 		const post = await createPost(
 			title,
 			content,
@@ -45,7 +58,8 @@ export const createPostController = async (req: Request, res: Response) => {
 			category,
 			tags,
 			folderId,
-			isAnonymous ?? false
+			isAnonymous ?? false,
+			status
 		);
 
 		res.status(201).json(post);
@@ -124,7 +138,25 @@ export const getMyPostsController = async (req: Request, res: Response) => {
 			return res.status(401).json({ error: 'Unauthorized' });
 		}
 
-		const posts = await getPostsByAuthor(userId);
+		const { status, page, limit } = req.query;
+
+		// Paginated approved-only view (for profile page)
+		if (status === 'APPROVED' && page !== undefined) {
+			const pageNum = Math.max(1, parseInt(page as string) || 1);
+			const limitNum = Math.max(
+				1,
+				parseInt((limit as string) || '5') || 5
+			);
+			const result = await getApprovedPostsByAuthorPaginated(
+				userId,
+				pageNum,
+				limitNum
+			);
+			return res.json(result);
+		}
+
+		// Show all posts (including pending/rejected) for the author's own view
+		const posts = await getPostsByAuthorAllStatuses(userId);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching my posts:', err);
@@ -340,5 +372,88 @@ export const getPostsByFolderController = async (
 	} catch (err) {
 		console.error('Error fetching posts by folder:', err);
 		res.status(500).json({ error: 'Failed to fetch posts by folder' });
+	}
+};
+
+// Get pending posts (ADMIN / TRUSTED only)
+export const getPendingPostsController = async (
+	req: Request,
+	res: Response
+) => {
+	try {
+		const userRole = req.user?.role;
+		if (userRole !== 'ADMIN' && userRole !== 'TRUSTED') {
+			return res
+				.status(403)
+				.json({ error: 'Forbidden: Admin or Trusted access required' });
+		}
+
+		const page = parseInt(req.query.page as string) || 1;
+		const limit = parseInt(req.query.limit as string) || 10;
+		const posts = await getPendingPosts(page, limit);
+		res.json(posts);
+	} catch (err) {
+		console.error('Error fetching pending posts:', err);
+		res.status(500).json({ error: 'Failed to fetch pending posts' });
+	}
+};
+
+// Approve a pending post (ADMIN / TRUSTED only)
+export const approvePostController = async (req: Request, res: Response) => {
+	try {
+		const userRole = req.user?.role;
+		if (userRole !== 'ADMIN' && userRole !== 'TRUSTED') {
+			return res
+				.status(403)
+				.json({ error: 'Forbidden: Admin or Trusted access required' });
+		}
+
+		const id = req.params.id as string;
+		const post = await getPostById(id);
+		if (!post) {
+			return res.status(404).json({ error: 'Post not found' });
+		}
+
+		if (post.status !== 'PENDING') {
+			return res
+				.status(400)
+				.json({ error: 'Post is not in pending state' });
+		}
+
+		const updated = await approvePost(id);
+		res.json(updated);
+	} catch (err) {
+		console.error('Error approving post:', err);
+		res.status(500).json({ error: 'Failed to approve post' });
+	}
+};
+
+// Reject a pending post (ADMIN / TRUSTED only)
+export const rejectPostController = async (req: Request, res: Response) => {
+	try {
+		const userRole = req.user?.role;
+		if (userRole !== 'ADMIN' && userRole !== 'TRUSTED') {
+			return res
+				.status(403)
+				.json({ error: 'Forbidden: Admin or Trusted access required' });
+		}
+
+		const id = req.params.id as string;
+		const post = await getPostById(id);
+		if (!post) {
+			return res.status(404).json({ error: 'Post not found' });
+		}
+
+		if (post.status !== 'PENDING') {
+			return res
+				.status(400)
+				.json({ error: 'Post is not in pending state' });
+		}
+
+		const updated = await rejectPost(id);
+		res.json(updated);
+	} catch (err) {
+		console.error('Error rejecting post:', err);
+		res.status(500).json({ error: 'Failed to reject post' });
 	}
 };

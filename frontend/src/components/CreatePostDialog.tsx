@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import {
 	Dialog,
 	DialogContent,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createPost, addFileToPost } from '@/services/post.service';
 import { uploadFile } from '@/services/file.service';
-import { Plus, X, FileIcon } from 'lucide-react';
+import { Plus, X, FileIcon, Clock } from 'lucide-react';
 
 interface CreatePostDialogProps {
 	onPostCreated?: () => void;
@@ -22,6 +23,10 @@ interface CreatePostDialogProps {
 }
 
 export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogProps) {
+	const { data: session } = useSession();
+	const userRole = session?.role as string | undefined;
+	const isStandard = !userRole || userRole === 'STANDARD';
+
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [title, setTitle] = useState('');
@@ -65,7 +70,11 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 			setSelectedFiles([]);
 			setOpen(false);
 
-			alert('Post created successfully!');
+			if (post.status === 'PENDING') {
+				alert('Your post has been submitted and is awaiting approval by an admin.');
+			} else {
+				alert('Post created successfully!');
+			}
 			onPostCreated?.();
 		} catch (error) {
 			console.error('Error creating post:', error);
@@ -107,6 +116,17 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 						Write your post using Markdown — supports headings, code blocks, lists, and more.
 					</DialogDescription>
 				</DialogHeader>
+
+				{isStandard && (
+					<div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+						<Clock className="mt-0.5 h-4 w-4 shrink-0" />
+						<span>
+							<strong>Pending approval:</strong> As a standard user, your post will be reviewed by
+							an admin before it appears publicly.
+						</span>
+					</div>
+				)}
+
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<label className="text-sm font-medium">
@@ -229,7 +249,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 							Cancel
 						</Button>
 						<Button type="submit" className="bg-[#006837] hover:bg-[#005530]" disabled={loading}>
-							{loading ? 'Creating...' : 'Create Post'}
+							{loading ? 'Submitting...' : isStandard ? 'Submit for Approval' : 'Create Post'}
 						</Button>
 					</DialogFooter>
 				</form>

@@ -9,6 +9,7 @@ export interface PostMetadata {
 	link?: string | null;
 	authorId: string;
 	privacy: string;
+	status: 'PENDING' | 'APPROVED' | 'REJECTED';
 	views: number;
 	category?: string | null;
 	tags: string[];
@@ -57,12 +58,13 @@ export const createPost = async (
 	category?: string | null,
 	tags?: string[],
 	folderId?: string | null,
-	isAnonymous?: boolean
+	isAnonymous?: boolean,
+	status?: string
 ): Promise<PostMetadata> => {
 	const pool: Pool = await getDbConnection();
 	const queryText = `
-        INSERT INTO posts (id, title, content, description, link, "authorId", privacy, category, tags, "folderId", "isAnonymous", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        INSERT INTO posts (id, title, content, description, link, "authorId", privacy, category, tags, "folderId", "isAnonymous", status, "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
         RETURNING *;
     `;
 
@@ -77,6 +79,7 @@ export const createPost = async (
 		tags || [],
 		folderId || null,
 		isAnonymous ?? false,
+		status || 'APPROVED',
 	];
 	const result = await pool.query(queryText, values);
 	return result.rows[0];
@@ -90,7 +93,7 @@ export const getAllPosts = async (
 	const offset = (page - 1) * limit;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p`;
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p.status = 'APPROVED'`;
 	const countResult = await pool.query(countQuery);
 	const total = countResult.rows[0].count;
 
@@ -104,6 +107,7 @@ export const getAllPosts = async (
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
         LEFT JOIN post_files pf ON p.id = pf."postId"
+        WHERE p.status = 'APPROVED'
         GROUP BY p.id, u.name, u.email
         ORDER BY p."createdAt" DESC
         LIMIT $1 OFFSET $2;
@@ -176,7 +180,7 @@ export const getPublicPosts = async (
 	const offset = (page - 1) * limit;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p.privacy = 'PUBLIC'`;
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p.privacy = 'PUBLIC' AND p.status = 'APPROVED'`;
 	const countResult = await pool.query(countQuery);
 	const total = countResult.rows[0].count;
 
@@ -190,7 +194,7 @@ export const getPublicPosts = async (
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
         LEFT JOIN post_files pf ON p.id = pf."postId"
-        WHERE p.privacy = 'PUBLIC'
+        WHERE p.privacy = 'PUBLIC' AND p.status = 'APPROVED'
         GROUP BY p.id, u.name, u.email
         ORDER BY p."createdAt" DESC
         LIMIT $1 OFFSET $2;
@@ -386,7 +390,7 @@ export const getPostsByFolder = async (
 	const offset = (page - 1) * limit;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1`;
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED'`;
 	const countResult = await pool.query(countQuery, [folderId]);
 	const total = countResult.rows[0].count;
 
@@ -400,7 +404,7 @@ export const getPostsByFolder = async (
         FROM posts p
         LEFT JOIN users u ON p."authorId" = u.id
         LEFT JOIN post_files pf ON p.id = pf."postId"
-        WHERE p."folderId" = $1
+        WHERE p."folderId" = $1 AND p.status = 'APPROVED'
         GROUP BY p.id, u.name, u.email
         ORDER BY p."createdAt" DESC
         LIMIT $2 OFFSET $3;
@@ -408,6 +412,144 @@ export const getPostsByFolder = async (
 	const values = [folderId, limit, offset];
 	const result = await pool.query(queryText, values);
 
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
+};
+
+// Get pending posts awaiting approval (admin use)
+export const getPendingPosts = async (
+	page: number = 1,
+	limit: number = 10
+): Promise<PaginatedResponse<PostMetadata>> => {
+	const pool: Pool = await getDbConnection();
+	const offset = (page - 1) * limit;
+
+	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p.status = 'PENDING'`;
+	const countResult = await pool.query(countQuery);
+	const total = countResult.rows[0].count;
+
+	const queryText = `
+        SELECT 
+            p.*,
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
+            COUNT(pf.id)::int as "fileCount"
+        FROM posts p
+        LEFT JOIN users u ON p."authorId" = u.id
+        LEFT JOIN post_files pf ON p.id = pf."postId"
+        WHERE p.status = 'PENDING'
+        GROUP BY p.id, u.name, u.email
+        ORDER BY p."createdAt" ASC
+        LIMIT $1 OFFSET $2;
+    `;
+	const result2 = await pool.query(queryText, [limit, offset]);
+
+	const totalPages = Math.ceil(total / limit);
+
+	return {
+		data: result2.rows,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages,
+			hasNext: page < totalPages,
+			hasPrev: page > 1,
+		},
+	};
+};
+
+// Approve a pending post
+export const approvePost = async (id: string): Promise<PostMetadata | null> => {
+	const pool: Pool = await getDbConnection();
+	const queryText = `
+        UPDATE posts
+        SET status = 'APPROVED', "updatedAt" = NOW()
+        WHERE id = $1
+        RETURNING *;
+    `;
+	const result = await pool.query(queryText, [id]);
+	return result.rows[0] || null;
+};
+
+// Reject a pending post
+export const rejectPost = async (id: string): Promise<PostMetadata | null> => {
+	const pool: Pool = await getDbConnection();
+	const queryText = `
+        UPDATE posts
+        SET status = 'REJECTED', "updatedAt" = NOW()
+        WHERE id = $1
+        RETURNING *;
+    `;
+	const result = await pool.query(queryText, [id]);
+	return result.rows[0] || null;
+};
+
+// Get all posts by author including all statuses (for the author to see their own)
+export const getPostsByAuthorAllStatuses = async (
+	authorId: string
+): Promise<PostMetadata[]> => {
+	const pool: Pool = await getDbConnection();
+	const queryText = `
+        SELECT 
+            p.*,
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
+            COUNT(pf.id)::int as "fileCount"
+        FROM posts p
+        LEFT JOIN users u ON p."authorId" = u.id
+        LEFT JOIN post_files pf ON p.id = pf."postId"
+        WHERE p."authorId" = $1
+        GROUP BY p.id, u.name, u.email
+        ORDER BY p."createdAt" DESC;
+    `;
+	const result = await pool.query(queryText, [authorId]);
+	return result.rows;
+};
+
+// Get approved posts by author with pagination (for public profile view)
+export const getApprovedPostsByAuthorPaginated = async (
+	authorId: string,
+	page: number = 1,
+	limit: number = 5
+): Promise<PaginatedResponse<PostMetadata>> => {
+	const pool: Pool = await getDbConnection();
+	const offset = (page - 1) * limit;
+
+	const countQuery = `
+        SELECT COUNT(DISTINCT p.id)::int as count
+        FROM posts p
+        WHERE p."authorId" = $1 AND p.status = 'APPROVED' AND p."isAnonymous" = false
+    `;
+	const countResult = await pool.query(countQuery, [authorId]);
+	const total = countResult.rows[0].count;
+
+	const queryText = `
+        SELECT 
+            p.*,
+            u.name as "authorName",
+            u.email as "authorEmail",
+            COUNT(pf.id)::int as "fileCount"
+        FROM posts p
+        LEFT JOIN users u ON p."authorId" = u.id
+        LEFT JOIN post_files pf ON p.id = pf."postId"
+        WHERE p."authorId" = $1 AND p.status = 'APPROVED' AND p."isAnonymous" = false
+        GROUP BY p.id, u.name, u.email
+        ORDER BY p."createdAt" DESC
+        LIMIT $2 OFFSET $3;
+    `;
+	const result = await pool.query(queryText, [authorId, limit, offset]);
 	const totalPages = Math.ceil(total / limit);
 
 	return {
