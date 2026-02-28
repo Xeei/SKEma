@@ -13,12 +13,18 @@ import {
 	Calendar,
 	FileText,
 	Tag,
+	ThumbsUp,
+	ThumbsDown,
+	Clock,
+	XCircle,
 } from 'lucide-react';
 import {
 	getMyApprovedPostsPaginated,
 	deletePost,
 	PostData,
 	PaginationMeta,
+	getMyStats,
+	AuthorStats,
 } from '@/services/post.service';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
 import Link from 'next/link';
@@ -39,6 +45,7 @@ export default function ProfilePage() {
 	const [loading, setLoading] = useState(true);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+	const [stats, setStats] = useState<AuthorStats | null>(null);
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
@@ -63,6 +70,7 @@ export default function ProfilePage() {
 	useEffect(() => {
 		if (status === 'authenticated') {
 			loadPosts(1);
+			getMyStats().then(setStats).catch(console.error);
 		}
 	}, [status, loadPosts]);
 
@@ -134,14 +142,83 @@ export default function ProfilePage() {
 					</div>
 
 					{/* Quick stats */}
-					<div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
+					<div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+						{/* Total posts */}
 						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
 							<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide mb-1">
 								โพสต์ทั้งหมด
 							</p>
-							<p className="font-sarabun text-2xl font-bold">{approvedCount}</p>
+							<p className="font-sarabun text-2xl font-bold">
+								{stats?.totalPosts ?? approvedCount}
+							</p>
+						</div>
+						{/* Approved */}
+						{/* <div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
+							<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide mb-1">
+								อนุมัติแล้ว
+							</p>
+							<p className="font-sarabun text-2xl font-bold">{stats?.approvedPosts ?? '—'}</p>
+						</div> */}
+						{/* Pending */}
+						{/* <div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
+							<div className="flex items-center gap-1 mb-1">
+								<Clock className="w-3 h-3 text-white/60" />
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">
+									รอตรวจสอบ
+								</p>
+							</div>
+							<p className="font-sarabun text-2xl font-bold">{stats?.pendingPosts ?? '—'}</p>
+						</div> */}
+						{/* Upvotes */}
+						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
+							<div className="flex items-center gap-1 mb-1">
+								<ThumbsUp className="w-3 h-3 text-white/60" />
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">
+									อัปโหวต
+								</p>
+							</div>
+							<p className="font-sarabun text-2xl font-bold">{stats?.totalUpvotes ?? '—'}</p>
+						</div>
+						{/* Downvotes */}
+						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
+							<div className="flex items-center gap-1 mb-1">
+								<ThumbsDown className="w-3 h-3 text-white/60" />
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">
+									ดาวน์โหวต
+								</p>
+							</div>
+							<p className="font-sarabun text-2xl font-bold">{stats?.totalDownvotes ?? '—'}</p>
+						</div>
+						{/* Total views */}
+						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
+							<div className="flex items-center gap-1 mb-1">
+								<Eye className="w-3 h-3 text-white/60" />
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">ยอดวิว</p>
+							</div>
+							<p className="font-sarabun text-2xl font-bold">{stats?.totalViews ?? '—'}</p>
 						</div>
 					</div>
+
+					{/* Most upvoted post callout */}
+					{stats?.mostUpvotedPost && (
+						<Link
+							href={`/library/post/${stats.mostUpvotedPost.id}`}
+							className="mt-4 flex items-center gap-3 bg-white/10 border border-white/10 rounded-xl px-4 py-3 hover:bg-white/15 transition-colors"
+						>
+							<ThumbsUp className="w-4 h-4 text-emerald-300 shrink-0" />
+							<div className="flex-1 min-w-0">
+								<p className="font-sarabun text-white/60 text-xs mb-0.5">
+									โพสต์ที่ได้รับอัปโหวตมากที่สุด
+								</p>
+								<p className="font-sarabun text-sm font-semibold truncate">
+									{stats.mostUpvotedPost.title}
+								</p>
+							</div>
+							<span className="font-sarabun text-emerald-300 font-bold text-sm shrink-0">
+								{stats.mostUpvotedPost.upvotes} ▲
+							</span>
+						</Link>
+					)}
 				</div>
 			</div>
 
@@ -189,9 +266,10 @@ export default function ProfilePage() {
 							<>
 								<div className="space-y-3 mb-6">
 									{posts.map((post) => (
-										<div
+										<Link
 											key={post.id}
-											className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-sm transition-all"
+											href={`/library/post/${post.id}`}
+											className="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-sm hover:border-[#006837] transition-all"
 										>
 											<div className="h-0.5 w-full bg-emerald-500" />
 											<div className="px-5 py-4">
@@ -229,25 +307,20 @@ export default function ProfilePage() {
 														)}
 													</div>
 													<div className="flex items-center gap-1 shrink-0">
-														<Link href={`/library/post/${post.id}`}>
-															<button
-																className="p-2 rounded-lg text-gray-400 hover:text-[#006837] hover:bg-emerald-50 transition-colors"
-																title="ดูโพสต์"
-															>
-																<Eye className="h-4 w-4" />
-															</button>
-														</Link>
 														<button
 															className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
 															title="ลบโพสต์"
-															onClick={() => handleDelete(post.id)}
+															onClick={(e) => {
+																e.preventDefault();
+																handleDelete(post.id);
+															}}
 														>
 															<Trash2 className="h-4 w-4" />
 														</button>
 													</div>
 												</div>
 											</div>
-										</div>
+										</Link>
 									))}
 								</div>
 

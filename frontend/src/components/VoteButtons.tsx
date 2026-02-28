@@ -54,14 +54,14 @@ export function VoteButtons({
 		<div className="flex items-center gap-3">
 			{/* Upvote */}
 			<Button
-				variant={myVote === 'UPVOTE' ? 'default' : 'outline'}
+				variant="outline"
 				size="sm"
 				onClick={() => handleVote('UPVOTE')}
 				disabled={!enabled || loading}
 				className={`flex items-center gap-1.5 transition-colors ${
 					myVote === 'UPVOTE'
-						? 'bg-[#006837] text-white hover:bg-[#005530]'
-						: 'hover:border-[#006837] hover:text-[#006837]'
+						? 'text-[#006837]'
+						: 'hover:text-[#006837]'
 				}`}
 				aria-label="Upvote"
 				aria-pressed={myVote === 'UPVOTE'}
@@ -72,14 +72,14 @@ export function VoteButtons({
 
 			{/* Downvote */}
 			<Button
-				variant={myVote === 'DOWNVOTE' ? 'default' : 'outline'}
+				variant="outline"
 				size="sm"
 				onClick={() => handleVote('DOWNVOTE')}
 				disabled={!enabled || loading}
 				className={`flex items-center gap-1.5 transition-colors ${
 					myVote === 'DOWNVOTE'
-						? 'bg-red-600 text-white hover:bg-red-700'
-						: 'hover:border-red-500 hover:text-red-500'
+						? 'text-red-500'
+						: 'hover:text-red-500'
 				}`}
 				aria-label="Downvote"
 				aria-pressed={myVote === 'DOWNVOTE'}

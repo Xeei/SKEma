@@ -25,6 +25,7 @@ import {
 	rejectPostController,
 	votePostController,
 	getMyVoteController,
+	getMyStatsController,
 } from '../controllers/post.controller';
 
 const router = express.Router();
@@ -52,6 +53,9 @@ router.get('/folder/:folderId', authMiddleware, getPostsByFolderController);
 
 // Get current user's posts
 router.get('/my-posts', authMiddleware, getMyPostsController);
+
+// Get current user's activity stats
+router.get('/stats/me', authMiddleware, getMyStatsController);
 
 // ── Admin-only: post approval ─────────────────────────────────────────────────
 

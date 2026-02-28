@@ -20,6 +20,7 @@ import {
 	rejectPost,
 	votePost,
 	getUserVoteOnPost,
+	getAuthorStats,
 } from '../models/post.model';
 import {
 	createNotification,
@@ -590,5 +591,23 @@ export const getMyVoteController = async (req: Request, res: Response) => {
 	} catch (err) {
 		console.error('Error fetching user vote:', err);
 		res.status(500).json({ error: 'Failed to fetch vote' });
+	}
+};
+
+/**
+ * GET /stats/me
+ * Returns aggregated activity statistics for the authenticated user.
+ */
+export const getMyStatsController = async (req: Request, res: Response) => {
+	try {
+		const userId = req.user?.id;
+		if (!userId) {
+			return res.status(401).json({ error: 'Unauthorized' });
+		}
+		const stats = await getAuthorStats(userId);
+		res.json(stats);
+	} catch (err) {
+		console.error('Error fetching author stats:', err);
+		res.status(500).json({ error: 'Failed to fetch stats' });
 	}
 };

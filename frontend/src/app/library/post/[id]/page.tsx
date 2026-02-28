@@ -18,7 +18,6 @@ import {
 	Download,
 	ArrowLeft,
 	Calendar,
-	User,
 	Eye,
 	Lock,
 	Globe,
@@ -29,6 +28,7 @@ import {
 import { EditPostDialog } from '@/components/EditPostDialog';
 import { VoteButtons } from '@/components/VoteButtons';
 import { ButtonGroup } from '@/components/ui/button-group';
+import Link from 'next/link';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -210,7 +210,7 @@ export default function PostDetailPage() {
 						<div className="flex gap-2">
 							<ButtonGroup>
 								<DropdownMenu>
-									<DropdownMenuTrigger>
+									<DropdownMenuTrigger asChild>
 										<Button variant="outline" size="icon" aria-label="More Options">
 											<MoreHorizontalIcon />
 										</Button>
@@ -279,14 +279,43 @@ export default function PostDetailPage() {
 
 						{/* Metadata */}
 						<div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
-							<div className="flex items-center gap-2">
-								<User className="w-4 h-4" />
-								<span>
-									{post.isAnonymous
-										? 'Anonymous'
-										: post.authorName || post.authorEmail || 'Anonymous'}
-								</span>
-							</div>
+							{/* Author avatar */}
+							{(() => {
+								const isAnon = post.isAnonymous;
+								const displayName = isAnon
+									? 'Anonymous'
+									: post.authorName || post.authorEmail || 'Anonymous';
+								const initials = isAnon
+									? '?'
+									: (post.authorName || post.authorEmail || 'A')
+											.split(' ')
+											.map((w) => w[0])
+											.join('')
+											.slice(0, 2)
+											.toUpperCase();
+								const isOwn = session?.userId === post.authorId;
+								const avatar = (
+									<div className="flex items-center gap-2">
+										<div className="w-7 h-7 rounded-full bg-[#006837]/15 flex items-center justify-center text-[10px] font-bold text-[#006837] shrink-0">
+											{initials}
+										</div>
+										<span
+											className={
+												isOwn && !isAnon ? 'underline underline-offset-2 decoration-dotted' : ''
+											}
+										>
+											{displayName}
+										</span>
+									</div>
+								);
+								return isOwn && !isAnon ? (
+									<Link href="/profile" className="hover:text-[#006837] transition-colors">
+										{avatar}
+									</Link>
+								) : (
+									avatar
+								);
+							})()}
 							<div className="flex items-center gap-2">
 								<Calendar className="w-4 h-4" />
 								<span>{new Date(post.createdAt).toLocaleDateString()}</span>

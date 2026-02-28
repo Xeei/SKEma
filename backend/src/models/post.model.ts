@@ -655,3 +655,64 @@ export const getUserVoteOnPost = async (
 	);
 	return result.rows[0]?.voteType ?? null;
 };
+
+export interface AuthorStats {
+	totalPosts: number;
+	approvedPosts: number;
+	pendingPosts: number;
+	rejectedPosts: number;
+	totalUpvotes: number;
+	totalDownvotes: number;
+	totalViews: number;
+	totalFiles: number;
+	mostUpvotedPost: { id: string; title: string; upvotes: number } | null;
+}
+
+/** Aggregate activity statistics for a given author. */
+export const getAuthorStats = async (userId: string): Promise<AuthorStats> => {
+	const pool: Pool = await getDbConnection();
+
+	const statsResult = await pool.query(
+		`SELECT
+			COUNT(*)::int                                                         AS "totalPosts",
+			COUNT(*) FILTER (WHERE status = 'APPROVED')::int                     AS "approvedPosts",
+			COUNT(*) FILTER (WHERE status = 'PENDING')::int                      AS "pendingPosts",
+			COUNT(*) FILTER (WHERE status = 'REJECTED')::int                     AS "rejectedPosts",
+			COALESCE(SUM(upvotes)::int, 0)                                       AS "totalUpvotes",
+			COALESCE(SUM(downvotes)::int, 0)                                     AS "totalDownvotes",
+			COALESCE(SUM(views)::int, 0)                                         AS "totalViews"
+		 FROM posts
+		 WHERE "authorId" = $1`,
+		[userId]
+	);
+
+	const fileResult = await pool.query(
+		`SELECT COUNT(pf.id)::int AS "totalFiles"
+		 FROM post_files pf
+		 INNER JOIN posts p ON pf."postId" = p.id
+		 WHERE p."authorId" = $1`,
+		[userId]
+	);
+
+	const topPostResult = await pool.query(
+		`SELECT id, title, upvotes
+		 FROM posts
+		 WHERE "authorId" = $1 AND upvotes > 0
+		 ORDER BY upvotes DESC
+		 LIMIT 1`,
+		[userId]
+	);
+
+	const s = statsResult.rows[0];
+	return {
+		totalPosts: s.totalPosts,
+		approvedPosts: s.approvedPosts,
+		pendingPosts: s.pendingPosts,
+		rejectedPosts: s.rejectedPosts,
+		totalUpvotes: s.totalUpvotes,
+		totalDownvotes: s.totalDownvotes,
+		totalViews: s.totalViews,
+		totalFiles: fileResult.rows[0]?.totalFiles ?? 0,
+		mostUpvotedPost: topPostResult.rows[0] ?? null,
+	};
+};

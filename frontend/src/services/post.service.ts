@@ -232,3 +232,23 @@ export const getMyVote = async (id: string): Promise<VoteType | null> => {
 	const { data } = await instance.get(`/${id}/vote/me`);
 	return data.voteType;
 };
+
+// ── Author stats ──────────────────────────────────────────────────────────────
+
+export interface AuthorStats {
+	totalPosts: number;
+	approvedPosts: number;
+	pendingPosts: number;
+	rejectedPosts: number;
+	totalUpvotes: number;
+	totalDownvotes: number;
+	totalViews: number;
+	totalFiles: number;
+	mostUpvotedPost: { id: string; title: string; upvotes: number } | null;
+}
+
+/** Fetch aggregated activity stats for the currently authenticated user. */
+export const getMyStats = async (): Promise<AuthorStats> => {
+	const { data } = await instance.get('/stats/me');
+	return data;
+};
