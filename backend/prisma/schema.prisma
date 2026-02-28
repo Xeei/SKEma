@@ -24,6 +24,11 @@ enum PostStatus {
   REJECTED
 }
 
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -37,6 +42,7 @@ model User {
   folders FileFolder[]
   posts     Post[]   @relation("PostAuthor")
   notifications Notification[]
+  postVotes PostVote[]
 
   @@map("users")
 }
@@ -130,6 +136,11 @@ model Post {
   // Privacy and engagement
   privacy     PrivacyLevel @default(PUBLIC)
   views       Int          @default(0)
+  upvotes     Int          @default(0)
+  downvotes   Int          @default(0)
+
+  // Votes
+  votes       PostVote[]
   
   // Categorization
   category    String?
@@ -144,6 +155,22 @@ model Post {
   updatedAt   DateTime     @updatedAt
   
   @@map("posts")
+}
+
+model PostVote {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  voteType  VoteType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postId, userId])
+  @@map("post_votes")
 }
 
 model PostFile {

@@ -18,6 +18,8 @@ import {
 	getPendingPosts,
 	approvePost,
 	rejectPost,
+	votePost,
+	getUserVoteOnPost,
 } from '../models/post.model';
 import {
 	createNotification,
@@ -532,5 +534,61 @@ export const rejectPostController = async (req: Request, res: Response) => {
 	} catch (err) {
 		console.error('Error rejecting post:', err);
 		res.status(500).json({ error: 'Failed to reject post' });
+	}
+};
+
+// ── Vote controllers ──────────────────────────────────────────────────────────
+
+/**
+ * POST /:id/vote   body: { voteType: 'UPVOTE' | 'DOWNVOTE' }
+ * Toggles the vote. Clicking the same type again removes the vote.
+ */
+export const votePostController = async (req: Request, res: Response) => {
+	try {
+		const postId = req.params.id as string;
+		const userId = req.user?.id;
+		const { voteType } = req.body;
+
+		if (!userId) {
+			return res.status(401).json({ error: 'Unauthorized' });
+		}
+
+		if (voteType !== 'UPVOTE' && voteType !== 'DOWNVOTE') {
+			return res
+				.status(400)
+				.json({ error: 'voteType must be UPVOTE or DOWNVOTE' });
+		}
+
+		const post = await getPostById(postId);
+		if (!post) {
+			return res.status(404).json({ error: 'Post not found' });
+		}
+
+		const result = await votePost(postId, userId, voteType);
+		res.json(result);
+	} catch (err) {
+		console.error('Error voting on post:', err);
+		res.status(500).json({ error: 'Failed to vote on post' });
+	}
+};
+
+/**
+ * GET /:id/vote/me
+ * Returns the current user's vote on the post ('UPVOTE' | 'DOWNVOTE' | null).
+ */
+export const getMyVoteController = async (req: Request, res: Response) => {
+	try {
+		const postId = req.params.id as string;
+		const userId = req.user?.id;
+
+		if (!userId) {
+			return res.status(401).json({ error: 'Unauthorized' });
+		}
+
+		const voteType = await getUserVoteOnPost(postId, userId);
+		res.json({ voteType });
+	} catch (err) {
+		console.error('Error fetching user vote:', err);
+		res.status(500).json({ error: 'Failed to fetch vote' });
 	}
 };

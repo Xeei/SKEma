@@ -14,6 +14,8 @@ export interface PostData {
 	privacy: 'PUBLIC' | 'PRIVATE' | 'SHARED';
 	status: 'PENDING' | 'APPROVED' | 'REJECTED';
 	views: number;
+	upvotes: number;
+	downvotes: number;
 	category?: string | null;
 	tags: string[];
 	createdAt: string;
@@ -204,4 +206,29 @@ export const approvePost = async (id: string): Promise<PostData> => {
 export const rejectPost = async (id: string): Promise<PostData> => {
 	const { data } = await instance.patch(`/${id}/reject`);
 	return data;
+};
+
+// ── Vote ──────────────────────────────────────────────────────────────────────
+
+export type VoteType = 'UPVOTE' | 'DOWNVOTE';
+
+export interface VoteResult {
+	voteType: VoteType | null;
+	upvotes: number;
+	downvotes: number;
+}
+
+/**
+ * Toggle an upvote or downvote on a post.
+ * Sending the same voteType again removes the vote.
+ */
+export const votePost = async (id: string, voteType: VoteType): Promise<VoteResult> => {
+	const { data } = await instance.post(`/${id}/vote`, { voteType });
+	return data;
+};
+
+/** Get the current user's existing vote on a post. */
+export const getMyVote = async (id: string): Promise<VoteType | null> => {
+	const { data } = await instance.get(`/${id}/vote/me`);
+	return data.voteType;
 };

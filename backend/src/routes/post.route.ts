@@ -23,6 +23,8 @@ import {
 	getPendingPostsController,
 	approvePostController,
 	rejectPostController,
+	votePostController,
+	getMyVoteController,
 } from '../controllers/post.controller';
 
 const router = express.Router();
@@ -108,5 +110,11 @@ router.patch('/:id/approve', authMiddleware, approvePostController);
 
 // Reject a post
 router.patch('/:id/reject', authMiddleware, rejectPostController);
+
+// Vote on a post (upvote / downvote)
+router.post('/:id/vote', authMiddleware, votePostController);
+
+// Get the current user's vote on a post
+router.get('/:id/vote/me', authMiddleware, getMyVoteController);
 
 export default router;

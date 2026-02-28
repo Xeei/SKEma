@@ -11,6 +11,8 @@ export interface PostMetadata {
 	privacy: string;
 	status: 'PENDING' | 'APPROVED' | 'REJECTED';
 	views: number;
+	upvotes: number;
+	downvotes: number;
 	category?: string | null;
 	tags: string[];
 	folderId?: string | null;
@@ -20,6 +22,14 @@ export interface PostMetadata {
 	authorName?: string;
 	authorEmail?: string;
 	fileCount?: number;
+}
+
+export type VoteType = 'UPVOTE' | 'DOWNVOTE';
+
+export interface PostVoteResult {
+	voteType: VoteType | null; // null means the vote was removed
+	upvotes: number;
+	downvotes: number;
 }
 
 export interface PostFileMetadata {
@@ -563,4 +573,85 @@ export const getApprovedPostsByAuthorPaginated = async (
 			hasPrev: page > 1,
 		},
 	};
+};
+
+// ── Vote functions ────────────────────────────────────────────────────────────
+
+/**
+ * Toggle an upvote or downvote on a post.
+ * - Same vote type clicked again → vote is removed
+ * - Different vote type → old vote removed, new vote added
+ * Returns the refreshed upvotes/downvotes counts and the user's resulting voteType (null = removed).
+ */
+export const votePost = async (
+	postId: string,
+	userId: string,
+	voteType: VoteType
+): Promise<PostVoteResult> => {
+	const pool: Pool = await getDbConnection();
+
+	// Check current vote by this user on this post
+	const existingVoteResult = await pool.query(
+		`SELECT "voteType" FROM post_votes WHERE "postId" = $1 AND "userId" = $2`,
+		[postId, userId]
+	);
+	const existingVote: VoteType | undefined =
+		existingVoteResult.rows[0]?.voteType;
+
+	let resultingVoteType: VoteType | null = null;
+
+	if (existingVote === voteType) {
+		// Same vote → remove it
+		await pool.query(
+			`DELETE FROM post_votes WHERE "postId" = $1 AND "userId" = $2`,
+			[postId, userId]
+		);
+		resultingVoteType = null;
+	} else if (existingVote) {
+		// Different vote → update it
+		await pool.query(
+			`UPDATE post_votes SET "voteType" = $3, "updatedAt" = NOW()
+			 WHERE "postId" = $1 AND "userId" = $2`,
+			[postId, userId, voteType]
+		);
+		resultingVoteType = voteType;
+	} else {
+		// No existing vote → insert
+		await pool.query(
+			`INSERT INTO post_votes (id, "postId", "userId", "voteType", "createdAt", "updatedAt")
+			 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())`,
+			[postId, userId, voteType]
+		);
+		resultingVoteType = voteType;
+	}
+
+	// Recalculate and cache counts on the post row
+	const countsResult = await pool.query(
+		`SELECT
+			COUNT(*) FILTER (WHERE "voteType" = 'UPVOTE')::int   AS upvotes,
+			COUNT(*) FILTER (WHERE "voteType" = 'DOWNVOTE')::int AS downvotes
+		 FROM post_votes WHERE "postId" = $1`,
+		[postId]
+	);
+	const { upvotes, downvotes } = countsResult.rows[0];
+
+	await pool.query(
+		`UPDATE posts SET upvotes = $2, downvotes = $3, "updatedAt" = NOW() WHERE id = $1`,
+		[postId, upvotes, downvotes]
+	);
+
+	return { voteType: resultingVoteType, upvotes, downvotes };
+};
+
+/** Return the requesting user's current vote on a post, or null if none. */
+export const getUserVoteOnPost = async (
+	postId: string,
+	userId: string
+): Promise<VoteType | null> => {
+	const pool: Pool = await getDbConnection();
+	const result = await pool.query(
+		`SELECT "voteType" FROM post_votes WHERE "postId" = $1 AND "userId" = $2`,
+		[postId, userId]
+	);
+	return result.rows[0]?.voteType ?? null;
 };

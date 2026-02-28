@@ -27,6 +27,7 @@ import {
 	MoreHorizontalIcon,
 } from 'lucide-react';
 import { EditPostDialog } from '@/components/EditPostDialog';
+import { VoteButtons } from '@/components/VoteButtons';
 import { ButtonGroup } from '@/components/ui/button-group';
 import {
 	DropdownMenu,
@@ -303,6 +304,16 @@ export default function PostDetailPage() {
 									{post.category}
 								</span>
 							)}
+						</div>
+
+						{/* Vote Buttons */}
+						<div className="mt-4">
+							<VoteButtons
+								postId={post.id}
+								initialUpvotes={post.upvotes ?? 0}
+								initialDownvotes={post.downvotes ?? 0}
+								enabled={!!session}
+							/>
 						</div>
 
 						{/* Tags */}
