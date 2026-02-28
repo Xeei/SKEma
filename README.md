@@ -14,3 +14,6 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 * **File Upload/Download:** Support for various document types relevant to the curriculum.
 * **Comment System:** Interactive feedback loops for every shared file.
 * **User Rankings:** A system to highlight active and reliable contributors.
+
+## Database Diagram
+* https://dbdiagram.io/d/68abda871e7a611967642547
