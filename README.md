@@ -16,4 +16,4 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 * **User Rankings:** A system to highlight active and reliable contributors.
 
 ## Database Diagram
-* https://dbdiagram.io/d/68abda871e7a611967642547
+* [https://dbdiagram.io/d/68abda871e7a611967642547](https://dbdiagram.io/d/69918f37bd82f5fce2beb8b4)
