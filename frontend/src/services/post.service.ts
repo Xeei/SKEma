@@ -105,9 +105,12 @@ export const getPostsByAuthor = async (authorId: string): Promise<PostData[]> =>
 export const getPostsByFolder = async (
 	folderId: string,
 	page: number = 1,
-	limit: number = 10
+	limit: number = 10,
+	search: string = ''
 ): Promise<PaginatedResponse<PostData>> => {
-	const { data } = await instance.get(`/folder/${folderId}`, { params: { page, limit } });
+	const { data } = await instance.get(`/folder/${folderId}`, {
+		params: { page, limit, ...(search ? { search } : {}) },
+	});
 	return data;
 };
 

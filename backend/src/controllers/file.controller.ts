@@ -276,12 +276,13 @@ export const getFilesByFolder = async (
 	res: Response
 ): Promise<void> => {
 	try {
-		const userId = req.params.userId as string;
-		const folderId = req.params.folderId as string;
-		const files = await getPublicFilesByFolder(userId, folderId);
+		const userId = (req as any).user?.userId as string;
+		const folderId = req.params.id as string;
+		const search = (req.query.search as string) || '';
+		const files = await getPublicFilesByFolder(userId, folderId, search);
 		res.status(200).json(files);
 	} catch (error) {
-		console.error('Error fetching user files:', error);
-		res.status(500).json({ error: 'Failed to fetch user files' });
+		console.error('Error fetching folder files:', error);
+		res.status(500).json({ error: 'Failed to fetch folder files' });
 	}
 };

@@ -136,14 +136,21 @@ export const getFoldersByUser = async (
 export const getFoldersByParent = async (
 	parentId: string | null,
 	page: number = 1,
-	limit: number = 10
+	limit: number = 10,
+	search: string = ''
 ): Promise<PaginatedResponse<FileFolderData>> => {
 	const pool: Pool = await getDbConnection();
 	const offset = (page - 1) * limit;
+	const searchParam = search ? `%${search}%` : null;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1`;
-	const countResult = await pool.query(countQuery, [parentId]);
+	const countQuery = searchParam
+		? `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1 AND name ILIKE $2`
+		: `SELECT COUNT(*)::int as count FROM file_folders WHERE "parentId" = $1`;
+	const countResult = await pool.query(
+		countQuery,
+		searchParam ? [parentId, searchParam] : [parentId]
+	);
 	const total = countResult.rows[0].count;
 
 	// Get paginated data with recursive file/post/subfolder counts
@@ -179,10 +186,16 @@ export const getFoldersByParent = async (
 			GROUP BY "parentId"
 		) sc ON sc."parentId" = ff.id
 		WHERE ff."parentId" = $1
+		${searchParam ? 'AND ff.name ILIKE $4' : ''}
 		ORDER BY ff."createdAt" DESC
 		LIMIT $2 OFFSET $3
 	`;
-	const result = await pool.query(query, [parentId, limit, offset]);
+	const result = await pool.query(
+		query,
+		searchParam
+			? [parentId, limit, offset, searchParam]
+			: [parentId, limit, offset]
+	);
 
 	const totalPages = Math.ceil(total / limit);
 

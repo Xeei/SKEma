@@ -394,18 +394,41 @@ export const updateFileOrder = async (
 export const getPostsByFolder = async (
 	folderId: string,
 	page: number = 1,
-	limit: number = 10
+	limit: number = 10,
+	search: string = ''
 ): Promise<PaginatedResponse<PostMetadata>> => {
 	const pool: Pool = await getDbConnection();
 	const offset = (page - 1) * limit;
+	const searchParam = search ? `%${search}%` : null;
 
 	// Get total count
-	const countQuery = `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED'`;
-	const countResult = await pool.query(countQuery, [folderId]);
+	const countQuery = searchParam
+		? `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED' AND (p.title ILIKE $2 OR p.description ILIKE $2)`
+		: `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED'`;
+	const countResult = await pool.query(
+		countQuery,
+		searchParam ? [folderId, searchParam] : [folderId]
+	);
 	const total = countResult.rows[0].count;
 
 	// Get paginated data
-	const queryText = `
+	const queryText = searchParam
+		? `
+        SELECT 
+            p.*,
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
+            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
+            COUNT(pf.id)::int as "fileCount"
+        FROM posts p
+        LEFT JOIN users u ON p."authorId" = u.id
+        LEFT JOIN post_files pf ON p.id = pf."postId"
+        WHERE p."folderId" = $1 AND p.status = 'APPROVED'
+          AND (p.title ILIKE $4 OR p.description ILIKE $4)
+        GROUP BY p.id, u.name, u.email
+        ORDER BY p."createdAt" DESC
+        LIMIT $2 OFFSET $3;
+    `
+		: `
         SELECT 
             p.*,
             CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
@@ -419,7 +442,9 @@ export const getPostsByFolder = async (
         ORDER BY p."createdAt" DESC
         LIMIT $2 OFFSET $3;
     `;
-	const values = [folderId, limit, offset];
+	const values = searchParam
+		? [folderId, limit, offset, searchParam]
+		: [folderId, limit, offset];
 	const result = await pool.query(queryText, values);
 
 	const totalPages = Math.ceil(total / limit);

@@ -68,7 +68,13 @@ export const getFoldersByParentController = async (
 		const parentId = req.params.parentId as string;
 		const page = parseInt(req.query.page as string) || 1;
 		const limit = parseInt(req.query.limit as string) || 10;
-		const folders = await getFoldersByParent(parentId || null, page, limit);
+		const search = (req.query.search as string) || '';
+		const folders = await getFoldersByParent(
+			parentId || null,
+			page,
+			limit,
+			search
+		);
 		res.json(folders);
 	} catch (err) {
 		res.status(500).json({ error: 'Failed to get folders' });
@@ -87,11 +93,9 @@ export const updateFolderController = async (req: Request, res: Response) => {
 		if (!existing)
 			return res.status(404).json({ error: 'Folder not found' });
 		if (existing.userId !== userId)
-			return res
-				.status(403)
-				.json({
-					error: 'Forbidden: You can only update your own folders',
-				});
+			return res.status(403).json({
+				error: 'Forbidden: You can only update your own folders',
+			});
 		const folder = await updateFolder(id, name, description);
 		res.json(folder);
 	} catch (err) {
@@ -108,11 +112,9 @@ export const deleteFolderController = async (req: Request, res: Response) => {
 		if (!existing)
 			return res.status(404).json({ error: 'Folder not found' });
 		if (existing.userId !== userId)
-			return res
-				.status(403)
-				.json({
-					error: 'Forbidden: You can only delete your own folders',
-				});
+			return res.status(403).json({
+				error: 'Forbidden: You can only delete your own folders',
+			});
 		const folder = await deleteFolder(id);
 		res.json(folder);
 	} catch (err) {

@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Sarabun } from 'next/font/google';
@@ -11,20 +11,30 @@ import {
 	deleteFolder,
 	PaginationMetadata,
 } from '@/services/folder.service';
-import { getAllFiles, FileData, uploadFile, downloadFile } from '@/services/file.service';
+import {
+	getFilesByFolder,
+	FileData,
+	downloadFile,
+	formatFileSize,
+	getFileIcon,
+} from '@/services/file.service';
 import {
 	getPostsByFolder,
 	PostData,
 	PaginationMetadata as PostPaginationMetadata,
 } from '@/services/post.service';
 import {
-	BookOpen,
 	ChevronRight,
 	Download,
 	ExternalLink,
 	FileText,
+	Folder,
 	FolderOpen,
 	Home,
+	Loader2,
+	Search,
+	ThumbsDown,
+	ThumbsUp,
 	Trash2,
 } from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
@@ -39,24 +49,6 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
-const FOLDER_COLORS = [
-	{
-		bg: 'bg-emerald-50',
-		border: 'border-emerald-200',
-		icon: 'bg-emerald-100',
-		text: 'text-emerald-700',
-	},
-	{ bg: 'bg-blue-50', border: 'border-blue-200', icon: 'bg-blue-100', text: 'text-blue-700' },
-	{
-		bg: 'bg-purple-50',
-		border: 'border-purple-200',
-		icon: 'bg-purple-100',
-		text: 'text-purple-700',
-	},
-	{ bg: 'bg-amber-50', border: 'border-amber-200', icon: 'bg-amber-100', text: 'text-amber-700' },
-	{ bg: 'bg-rose-50', border: 'border-rose-200', icon: 'bg-rose-100', text: 'text-rose-700' },
-];
-
 export default function FolderDetailPage() {
 	const router = useRouter();
 	const params = useParams();
@@ -69,8 +61,10 @@ export default function FolderDetailPage() {
 	const [files, setFiles] = useState<FileData[]>([]);
 	const [posts, setPosts] = useState<PostData[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [uploading, setUploading] = useState(false);
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [searching, setSearching] = useState(false);
+	const isFirstLoad = useRef(true);
+	const [searchQuery, setSearchQuery] = useState('');
+	const [debouncedSearch, setDebouncedSearch] = useState('');
 	const [subfoldersPage, setSubfoldersPage] = useState(1);
 	const [subfoldersPagination, setSubfoldersPagination] = useState<PaginationMetadata | null>(null);
 	const [postsPage, setPostsPage] = useState(1);
@@ -87,14 +81,28 @@ export default function FolderDetailPage() {
 	}, [folderId]);
 
 	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearch(searchQuery);
+			setSubfoldersPage(1);
+			setPostsPage(1);
+		}, 400);
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
+
+	useEffect(() => {
 		if (folderId) loadSubfolders(subfoldersPage);
 		// eslint-disable-next-line
-	}, [subfoldersPage]);
+	}, [subfoldersPage, debouncedSearch]);
 
 	useEffect(() => {
 		if (folderId) loadPosts(postsPage);
 		// eslint-disable-next-line
-	}, [postsPage]);
+	}, [postsPage, debouncedSearch]);
+
+	useEffect(() => {
+		if (folderId) loadFiles();
+		// eslint-disable-next-line
+	}, [debouncedSearch]);
 
 	const loadFolder = async () => {
 		try {
@@ -123,53 +131,53 @@ export default function FolderDetailPage() {
 	};
 
 	const loadSubfolders = async (page: number = 1) => {
+		setSearching(true);
 		try {
-			const response = await getFoldersByParent(folderId, page, 12);
+			const response = await getFoldersByParent(folderId, page, 12, debouncedSearch);
 			setSubfolders(response.data);
 			setSubfoldersPagination(response.pagination);
 		} catch {
 			setSubfolders([]);
 			setSubfoldersPagination(null);
+		} finally {
+			setSearching(false);
 		}
 	};
 
 	const loadFiles = async () => {
-		setLoading(true);
+		if (isFirstLoad.current) {
+			setLoading(true);
+		} else {
+			setSearching(true);
+		}
 		try {
-			const allFiles = await getAllFiles();
-			const publicFiles = allFiles.filter(
-				(file) => file.folderId === folderId && file.privacy === 'PUBLIC'
-			);
-			setFiles(publicFiles);
+			const folderFiles = await getFilesByFolder(folderId, debouncedSearch);
+			setFiles(folderFiles);
 		} catch {
 			setFiles([]);
 		} finally {
-			setLoading(false);
+			if (isFirstLoad.current) {
+				setLoading(false);
+				isFirstLoad.current = false;
+			} else {
+				setSearching(false);
+			}
 		}
 	};
 
+	const hasResults = subfolders.length + posts.length + files.length > 0;
+
 	const loadPosts = async (page: number = 1) => {
+		setSearching(true);
 		try {
-			const response = await getPostsByFolder(folderId, page, 4);
+			const response = await getPostsByFolder(folderId, page, 4, debouncedSearch);
 			setPosts(response.data);
 			setPostsPagination(response.pagination);
 		} catch {
 			setPosts([]);
 			setPostsPagination(null);
-		}
-	};
-
-	const handleFileUpload = async () => {
-		if (!selectedFile) return;
-		setUploading(true);
-		try {
-			await uploadFile(selectedFile, undefined, folderId, 'PUBLIC');
-			setSelectedFile(null);
-			await loadFiles();
-		} catch (error) {
-			console.error('Error uploading file:', error);
 		} finally {
-			setUploading(false);
+			setSearching(false);
 		}
 	};
 
@@ -290,224 +298,228 @@ export default function FolderDetailPage() {
 			</div>
 
 			{/* Content */}
-			<div className="max-w-5xl mx-auto px-6 py-10 space-y-12">
+			<div className="max-w-5xl mx-auto px-6 py-8">
 				{loading ? (
 					<div className="flex flex-col items-center justify-center py-24 gap-4">
 						<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
 						<p className="font-sarabun text-gray-500">กำลังโหลดข้อมูล...</p>
 					</div>
 				) : (
-					<>
-						{/* Subfolders */}
-						{(subfolders.length > 0 || session?.role === 'ADMIN') && (
-							<section>
-								<div className="flex items-center justify-between mb-5">
-									<div className="flex items-center gap-3">
-										<div className="w-1.5 h-7 bg-[#006837] rounded-full" />
-										<h2 className="font-sarabun text-xl font-bold text-gray-800">โฟลเดอร์ย่อย</h2>
-									</div>
-									{subfoldersPagination && (
-										<span className="font-sarabun text-sm text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-											{subfoldersPagination.total} โฟลเดอร์
-										</span>
-									)}
-								</div>
+					<div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+						{/* Toolbar */}
+						<div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/60">
+							<div className="relative flex-1">
+								<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+								<input
+									type="text"
+									placeholder="ค้นหาในโฟลเดอร์นี้... / Search here..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className="w-full pl-9 pr-3 py-1.5 text-sm font-sarabun border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#006837]/20 focus:border-[#006837]"
+								/>
+							</div>
+							{searching ? (
+								<Loader2 className="w-3.5 h-3.5 text-[#006837] animate-spin shrink-0" />
+							) : (
+								<span className="font-sarabun text-xs text-gray-400 shrink-0">
+									{subfolders.length + posts.length + files.length} รายการ
+								</span>
+							)}
+						</div>
 
-								{subfolders.length === 0 ? (
-									<div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
-										<p className="font-sarabun text-gray-400 text-sm">ยังไม่มีโฟลเดอร์ย่อย</p>
-									</div>
-								) : (
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-										{subfolders.map((subfolder, index) => {
-											const color = FOLDER_COLORS[index % FOLDER_COLORS.length];
-											return (
-												<div
-													key={subfolder.id}
-													onClick={() => router.push(`/library/folders/${subfolder.id}`)}
-													className={`${color.bg} border ${color.border} rounded-xl p-5 hover:shadow-md transition-all cursor-pointer group`}
-												>
-													<div className="flex items-start justify-between mb-3">
-														<div
-															className={`w-10 h-10 ${color.icon} rounded-lg flex items-center justify-center shrink-0`}
-														>
-															<BookOpen className={`w-5 h-5 ${color.text}`} />
-														</div>
-														<div className="flex items-center gap-1">
-															{session?.userId === subfolder.userId && (
-																<button
-																	className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
-																	onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
-																>
-																	<Trash2 className="w-3.5 h-3.5" />
-																</button>
-															)}
-															<ChevronRight
-																className={`w-4 h-4 ${color.text} opacity-0 group-hover:opacity-100 transition-opacity`}
-															/>
-														</div>
-													</div>
-													<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-[#006837] transition-colors leading-snug">
-														{subfolder.name}
-													</h3>
-													{subfolder.description && (
-														<p className="font-sarabun text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
-															{subfolder.description}
-														</p>
-													)}
-													<div className="mt-4">
-														{((subfolder.subfolderCount ?? 0) > 0 ||
-															(subfolder.postCount ?? 0) > 0 ||
-															(subfolder.fileCount ?? 0) > 0) && (
-															<div className="flex items-center gap-2 mb-2 flex-wrap">
-																{(subfolder.subfolderCount ?? 0) > 0 && (
-																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
-																		{subfolder.subfolderCount} โฟลเดอร์
-																	</span>
-																)}
-																{(subfolder.postCount ?? 0) > 0 && (
-																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
-																		{subfolder.postCount} โพสต์
-																	</span>
-																)}
-																{(subfolder.fileCount ?? 0) > 0 && (
-																	<span className={`font-sarabun text-xs ${color.text} opacity-70`}>
-																		{subfolder.fileCount} ไฟล์
-																	</span>
-																)}
-															</div>
-														)}
-														<div className="flex items-center gap-1.5 text-gray-400">
-															<FolderOpen className="w-3.5 h-3.5" />
-															<span className="font-sarabun text-xs">เปิดโฟลเดอร์</span>
-														</div>
-													</div>
-												</div>
-											);
-										})}
-									</div>
-								)}
+						{/* Column headers */}
+						<div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-1.5 border-b border-gray-100 bg-gray-50 text-xs font-sarabun text-gray-400 font-medium gap-3 select-none">
+							<span className="w-5" />
+							<span>ชื่อ / Name</span>
+							<span className="w-32 text-right hidden sm:block">วันที่แก้ไข</span>
+							<span className="w-24 text-right hidden md:block">ประเภท / Type</span>
+							<span className="w-20 text-right">ข้อมูล</span>
+						</div>
 
-								{subfoldersPagination && subfoldersPagination.totalPages > 1 && (
-									<div className="mt-6">
-										<Pagination
-											currentPage={subfoldersPagination.page}
-											totalPages={subfoldersPagination.totalPages}
-											onPageChange={setSubfoldersPage}
-											hasNext={subfoldersPagination.hasNext}
-											hasPrev={subfoldersPagination.hasPrev}
-										/>
-									</div>
-								)}
-							</section>
+						{!hasResults && (
+							<div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+								<FolderOpen className="w-12 h-12 text-gray-200" />
+								<p className="font-sarabun text-gray-400 text-sm">ไม่พบรายการที่ค้นหา</p>
+							</div>
 						)}
 
-						{/* Posts */}
-						<section>
-							<div className="flex items-center justify-between mb-5">
-								<div className="flex items-center gap-3">
-									<div className="w-1.5 h-7 bg-[#FDB913] rounded-full" />
-									<h2 className="font-sarabun text-xl font-bold text-gray-800">โพสต์และเอกสาร</h2>
-								</div>
-								{postsPagination && (
-									<span className="font-sarabun text-sm text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-										{postsPagination.total} โพสต์
-									</span>
-								)}
-							</div>
-
-							{posts.length === 0 ? (
-								<div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center">
-									<FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-									<p className="font-sarabun text-gray-400 text-sm">ยังไม่มีโพสต์ในโฟลเดอร์นี้</p>
-								</div>
-							) : (
-								<div className="space-y-3">
-									{posts.map((post) => (
+						{hasResults && (
+							<div className={`divide-y divide-gray-50 transition-opacity duration-150 ${searching ? 'opacity-50' : 'opacity-100'}`}>
+								{/* ── Subfolders (only on first posts page, or while searching) ── */}
+								{(postsPage === 1 || !!debouncedSearch) &&
+									subfolders.map((subfolder) => (
 										<div
-											key={post.id}
-											onClick={() => router.push(`/library/post/${post.id}`)}
-											className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-[#006837]/30 transition-all cursor-pointer group"
+											key={subfolder.id}
+											onClick={() => router.push(`/library/folders/${subfolder.id}`)}
+											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 cursor-pointer group gap-3 transition-colors"
 										>
-											<div className="flex items-start gap-4">
-												<div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
-													<FileText className="w-5 h-5 text-[#006837]" />
-												</div>
-												<div className="flex-1 min-w-0">
-													<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-[#006837] transition-colors leading-snug">
-														{post.title}
-													</h3>
-													{post.description && (
-														<p className="font-sarabun text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-															{post.description}
-														</p>
-													)}
-													{post.link && (
-														<a
-															href={post.link}
-															target="_blank"
-															rel="noopener noreferrer"
-															onClick={(e) => e.stopPropagation()}
-															className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 text-xs mt-2 transition-colors"
-														>
-															<ExternalLink className="w-3 h-3" />
-															<span className="font-sarabun truncate max-w-xs">{post.link}</span>
-														</a>
-													)}
-													<div className="flex items-center gap-3 mt-3 flex-wrap">
-														<span className="font-sarabun text-xs text-gray-400">
-															{post.isAnonymous
-																? 'Anonymous'
-																: post.authorName || post.authorEmail || 'Anonymous'}
-														</span>
-														<span className="text-gray-200">•</span>
-														<span className="font-sarabun text-xs text-gray-400">
-															{new Date(post.createdAt).toLocaleDateString('th-TH', {
-																year: 'numeric',
-																month: 'short',
-																day: 'numeric',
-															})}
-														</span>
-														{post.category && (
-															<>
-																<span className="text-gray-200">•</span>
-																<span className="bg-[#006837]/10 text-[#006837] font-sarabun text-xs px-2.5 py-0.5 rounded-full font-medium">
-																	{post.category}
-																</span>
-															</>
-														)}
-														{(post.fileCount ?? 0) > 0 && (
-															<>
-																<span className="text-gray-200">•</span>
-																<span className="font-sarabun text-xs text-gray-400">
-																	{post.fileCount} ไฟล์
-																</span>
-															</>
-														)}
-													</div>
-												</div>
-												<ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#006837] transition-colors shrink-0 mt-1" />
+											{/* Icon */}
+											<Folder className="w-5 h-5 text-amber-400 shrink-0 fill-amber-100" />
+											{/* Name */}
+											<div className="min-w-0 flex items-center gap-2">
+												<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-[#006837]">
+													{subfolder.name}
+												</span>
+												{subfolder.description && (
+													<span className="font-sarabun text-xs text-gray-400 truncate hidden lg:block">
+														— {subfolder.description}
+													</span>
+												)}
+											</div>
+											{/* Date */}
+											<span className="font-sarabun text-xs text-gray-400 w-32 text-right hidden sm:block shrink-0">
+												—
+											</span>
+											{/* Type */}
+											<span className="font-sarabun text-xs text-gray-400 w-24 text-right hidden md:block shrink-0">
+												File folder
+											</span>
+											{/* Meta + actions */}
+											<div className="flex items-center justify-end gap-2 w-20 shrink-0">
+												{session?.userId === subfolder.userId && (
+													<button
+														className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+														onClick={(e) => handleDeleteSubfolder(subfolder.id, e)}
+													>
+														<Trash2 className="w-3.5 h-3.5" />
+													</button>
+												)}
+												<ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#006837]" />
 											</div>
 										</div>
 									))}
-								</div>
-							)}
 
-							{postsPagination && postsPagination.totalPages > 1 && (
-								<div className="mt-6">
-									<Pagination
-										currentPage={postsPagination.page}
-										totalPages={postsPagination.totalPages}
-										onPageChange={setPostsPage}
-										hasNext={postsPagination.hasNext}
-										hasPrev={postsPagination.hasPrev}
-										total={postsPagination.total}
-										limit={postsPagination.limit}
-									/>
-								</div>
-							)}
-						</section>
-					</>
+								{/* ── Posts ── */}
+								{posts.map((post) => (
+									<div
+										key={post.id}
+										onClick={() => router.push(`/library/post/${post.id}`)}
+										className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 cursor-pointer group gap-3 transition-colors"
+									>
+										{/* Icon */}
+										<FileText className="w-5 h-5 text-[#006837] shrink-0" />
+										{/* Name */}
+										<div className="min-w-0 flex items-center gap-2">
+											<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-[#006837]">
+												{post.title}
+											</span>
+											{post.description && (
+												<span className="font-sarabun text-xs text-gray-400 truncate hidden lg:block">
+													— {post.description}
+												</span>
+											)}
+											{post.link && (
+												<a
+													href={post.link}
+													target="_blank"
+													rel="noopener noreferrer"
+													onClick={(e) => e.stopPropagation()}
+													className="shrink-0 text-blue-400 hover:text-blue-600"
+												>
+													<ExternalLink className="w-3 h-3" />
+												</a>
+											)}
+										</div>
+										{/* Date */}
+										<span className="font-sarabun text-xs text-gray-400 w-32 text-right hidden sm:block shrink-0">
+											{new Date(post.createdAt).toLocaleDateString('th-TH', {
+												year: 'numeric',
+												month: 'short',
+												day: 'numeric',
+											})}
+										</span>
+										{/* Type */}
+										<span className="font-sarabun text-xs text-gray-400 w-24 text-right hidden md:block shrink-0">
+											{post.category ?? 'โพสต์'}
+										</span>
+										{/* Meta */}
+										<div className="flex items-center justify-end gap-2 w-20 shrink-0">
+											<span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
+												<ThumbsUp className="w-3 h-3" />
+												{post.upvotes}
+											</span>
+											<span className="inline-flex items-center gap-0.5 text-xs text-red-400 font-medium">
+												<ThumbsDown className="w-3 h-3" />
+												{post.downvotes}
+											</span>
+										</div>
+									</div>
+								))}
+
+								{/* ── Files (only on first posts page, or while searching) ── */}
+								{(postsPage === 1 || !!debouncedSearch) &&
+									files.map((file) => (
+										<div
+											key={file.id}
+											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 group gap-3 transition-colors"
+										>
+											{/* Icon */}
+											<span className="w-5 h-5 text-center text-sm leading-none shrink-0 select-none">
+												{getFileIcon(file.mimetype)}
+											</span>
+											{/* Name */}
+											<span className="font-sarabun font-medium text-gray-800 truncate text-sm">
+												{file.originalName}
+											</span>
+											{/* Date */}
+											<span className="font-sarabun text-xs text-gray-400 w-32 text-right hidden sm:block shrink-0">
+												{new Date(file.createdAt).toLocaleDateString('th-TH', {
+													year: 'numeric',
+													month: 'short',
+													day: 'numeric',
+												})}
+											</span>
+											{/* Type */}
+											<span className="font-sarabun text-xs text-gray-400 w-24 text-right hidden md:block shrink-0 truncate">
+												{formatFileSize(file.size)}
+											</span>
+											{/* Actions */}
+											<div className="flex items-center justify-end gap-1.5 w-20 shrink-0">
+												<span className="inline-flex items-center gap-0.5 text-xs text-gray-400 mr-1">
+													<Download className="w-3 h-3" />
+													{file.downloads}
+												</span>
+												<button
+													className="inline-flex items-center gap-1 px-2 py-1 text-xs font-sarabun font-medium text-white bg-[#006837] hover:bg-[#005530] rounded transition-colors opacity-0 group-hover:opacity-100"
+													onClick={() => handleDownload(file.id, file.originalName)}
+												>
+													<Download className="w-3 h-3" />
+													ดาวน์โหลด
+												</button>
+											</div>
+										</div>
+									))}
+							</div>
+						)}
+
+						{/* Posts pagination */}
+						{postsPagination && postsPagination.totalPages > 1 && !debouncedSearch && (
+							<div className="px-4 py-4 border-t border-gray-100">
+								<Pagination
+									currentPage={postsPagination.page}
+									totalPages={postsPagination.totalPages}
+									onPageChange={setPostsPage}
+									hasNext={postsPagination.hasNext}
+									hasPrev={postsPagination.hasPrev}
+									total={postsPagination.total}
+									limit={postsPagination.limit}
+								/>
+							</div>
+						)}
+
+						{/* Subfolders pagination */}
+						{subfoldersPagination && subfoldersPagination.totalPages > 1 && !debouncedSearch && (
+							<div className="px-4 pb-4">
+								<Pagination
+									currentPage={subfoldersPagination.page}
+									totalPages={subfoldersPagination.totalPages}
+									onPageChange={setSubfoldersPage}
+									hasNext={subfoldersPagination.hasNext}
+									hasPrev={subfoldersPagination.hasPrev}
+								/>
+							</div>
+						)}
+					</div>
 				)}
 			</div>
 		</main>

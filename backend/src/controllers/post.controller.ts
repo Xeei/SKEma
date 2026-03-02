@@ -401,7 +401,8 @@ export const getPostsByFolderController = async (
 		const folderId = req.params.folderId as string;
 		const page = parseInt(req.query.page as string) || 1;
 		const limit = parseInt(req.query.limit as string) || 10;
-		const posts = await getPostsByFolder(folderId, page, limit);
+		const search = (req.query.search as string) || '';
+		const posts = await getPostsByFolder(folderId, page, limit, search);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching posts by folder:', err);

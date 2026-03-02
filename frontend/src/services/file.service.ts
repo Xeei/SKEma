@@ -98,6 +98,15 @@ export const getFileById = async (id: string): Promise<FileData> => {
 	return response.data;
 };
 
+// Get public files for a specific folder (with optional name search)
+export const getFilesByFolder = async (folderId: string, search = ''): Promise<FileData[]> => {
+	const serverInstance = getServerInstance();
+	const response = await serverInstance.get(`/folders/${folderId}`, {
+		params: { ...(search ? { search } : {}) },
+	});
+	return response.data;
+};
+
 // Download file
 export const downloadFile = async (id: string, filename: string): Promise<void> => {
 	const serverInstance = getServerInstance();

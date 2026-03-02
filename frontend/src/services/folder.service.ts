@@ -61,9 +61,12 @@ export const getFoldersByUser = async (): Promise<FileFolderData[]> => {
 export const getFoldersByParent = async (
 	parentId: string | null,
 	page: number = 1,
-	limit: number = 10
+	limit: number = 10,
+	search: string = ''
 ): Promise<PaginatedResponse<FileFolderData>> => {
-	const { data } = await instance.get(`/parent/${parentId}`, { params: { page, limit } });
+	const { data } = await instance.get(`/parent/${parentId}`, {
+		params: { page, limit, ...(search ? { search } : {}) },
+	});
 	return data;
 };
 

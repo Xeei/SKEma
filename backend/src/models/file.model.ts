@@ -163,33 +163,39 @@ export const getFilesByUser = async (
 
 export const getPublicFilesByFolder = async (
 	userId: string,
-	folderId: string
+	folderId: string,
+	search: string = ''
 ): Promise<FileMetadata[]> => {
 	const pool: Pool = await getDbConnection();
+	const searchParam = search ? `%${search}%` : null;
 	const queryText = `
 		SELECT
 		f.*,
-		u.name AS uploader_name,
-		u.email AS uploader_email,
-		'PUBLIC' AS access_type
+		u.name AS "uploaderName",
+		u.email AS "uploaderEmail"
 		FROM files f
 		JOIN users u ON f."uploadedBy" = u.id
 		WHERE f.privacy = 'PUBLIC'
+		  AND f."folderId" = $1
+		  ${searchParam ? 'AND f."originalName" ILIKE $3' : ''}
 
 		UNION
 
 		SELECT
 		f.*,
-		u.name AS uploader_name,
-		u.email AS uploader_email,
-		'SHARED' AS access_type
+		u.name AS "uploaderName",
+		u.email AS "uploaderEmail"
 		FROM files f
 		JOIN file_shares fs ON fs."fileId" = f.id
 		JOIN users u ON f."uploadedBy" = u.id
-		WHERE fs."userId" = $1
-		AND fs.id = $2;
+		WHERE fs."userId" = $2
+		  AND f."folderId" = $1
+		  ${searchParam ? 'AND f."originalName" ILIKE $3' : ''}
+		ORDER BY "createdAt" DESC;
     `;
-	const values = [userId, folderId];
+	const values: (string | null)[] = searchParam
+		? [folderId, userId, searchParam]
+		: [folderId, userId];
 	const result = await pool.query(queryText, values);
 	return result.rows;
 };
