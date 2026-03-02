@@ -61,10 +61,26 @@ export const uploadFile = async (
 	return response.data.file;
 };
 
-// Get all files
-export const getAllFiles = async (): Promise<FileData[]> => {
+export interface PaginatedFileResponse {
+	data: FileData[];
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+// Get all files (paginated + server-side search)
+export const getAllFiles = async (
+	page = 1,
+	limit = 20,
+	search = ''
+): Promise<PaginatedFileResponse> => {
 	const serverInstance = getServerInstance();
-	const response = await serverInstance.get('');
+	const response = await serverInstance.get('', {
+		params: { page, limit, ...(search ? { search } : {}) },
+	});
 	return response.data;
 };
 

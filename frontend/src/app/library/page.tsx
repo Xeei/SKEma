@@ -2,13 +2,11 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sarabun } from 'next/font/google';
-import { Upload, Download, Search, Filter, MoreVertical, FileText, Trash2 } from 'lucide-react';
-import { FileUpload } from '@/components/FileUpload';
+import { Download, Search, FileText, Trash2, Library } from 'lucide-react';
 import {
 	getAllFiles,
 	downloadFile,
@@ -16,7 +14,9 @@ import {
 	formatFileSize,
 	getFileIcon,
 	FileData,
+	PaginatedFileResponse,
 } from '@/services/file.service';
+import { Pagination } from '@/components/Pagination';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -25,13 +25,17 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
+const PAGE_LIMIT = 5;
+
 export default function LibraryPage() {
 	const { data: session, status } = useSession();
 	const router = useRouter();
-	const [files, setFiles] = useState<FileData[]>([]);
+
+	const [result, setResult] = useState<PaginatedFileResponse | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [showUpload, setShowUpload] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
+	const [debouncedSearch, setDebouncedSearch] = useState('');
+	const [currentPage, setCurrentPage] = useState(1);
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
@@ -39,23 +43,32 @@ export default function LibraryPage() {
 		}
 	}, [status, router]);
 
-	useEffect(() => {
-		if (status === 'authenticated') {
-			loadFiles();
-		}
-	}, [status]);
-
-	const loadFiles = async () => {
+	const loadFiles = useCallback(async (page: number, search: string) => {
 		setLoading(true);
 		try {
-			const data = await getAllFiles();
-			setFiles(data);
+			const data = await getAllFiles(page, PAGE_LIMIT, search);
+			setResult(data);
 		} catch (error) {
 			console.error('Error loading files:', error);
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	// Debounce: update debouncedSearch 400ms after user stops typing
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearch(searchQuery);
+			setCurrentPage(1); // reset to page 1 on new search
+		}, 400);
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
+
+	useEffect(() => {
+		if (status === 'authenticated') {
+			loadFiles(currentPage, debouncedSearch);
+		}
+	}, [status, currentPage, debouncedSearch, loadFiles]);
 
 	const handleDownload = async (id: string, filename: string) => {
 		try {
@@ -65,221 +78,187 @@ export default function LibraryPage() {
 		}
 	};
 
+	const handlePageChange = (page: number) => {
+		setCurrentPage(page);
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	};
+
 	const handleDelete = async (id: string) => {
 		if (!confirm('Are you sure you want to delete this file?')) return;
-
 		try {
 			await deleteFileService(id);
-			await loadFiles(); // Reload files after deletion
+			await loadFiles(currentPage, debouncedSearch);
 		} catch (error) {
 			console.error('Error deleting file:', error);
 			alert('Failed to delete file');
 		}
 	};
 
-	const filteredFiles = files.filter((file) =>
-		file.originalName.toLowerCase().includes(searchQuery.toLowerCase())
-	);
-
-	const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+	const files: FileData[] = result?.data ?? [];
 
 	if (status === 'loading') {
 		return (
-			<div className="min-h-[calc(100vh-180px)] flex items-center justify-center">
-				<div className="text-center">
-					<div className="w-16 h-16 border-4 border-[#006837] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-					<p className="text-muted-foreground">Loading...</p>
+			<div
+				className={`${sarabun.variable} min-h-[calc(100vh-180px)] flex items-center justify-center`}
+			>
+				<div className="flex flex-col items-center gap-4">
+					<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
+					<p className="font-sarabun text-gray-500">กำลังโหลด...</p>
 				</div>
 			</div>
 		);
 	}
 
-	if (status === 'unauthenticated') {
-		return null;
-	}
+	if (status === 'unauthenticated') return null;
 
 	return (
-		<main className="min-h-[calc(100vh-180px)] p-6">
-			<div className="max-w-7xl mx-auto space-y-6">
-				{/* Header */}
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
-							คลังไฟล์เรียน
+		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
+			{/* Hero Section */}
+			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-14 px-6">
+				<div className="max-w-5xl mx-auto text-center">
+					<span className="inline-block bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-5 font-sarabun">
+						คณะวิชาวิศวกรรมซอฟต์แวร์และความรู้
+					</span>
+					<div className="flex items-center justify-center gap-3 mb-3">
+						<Library className="w-10 h-10 text-[#FDB913]" />
+						<h1 className="font-sarabun text-5xl font-bold tracking-tight">
+							คลัง<span className="text-[#FDB913]">ไฟล์</span>
 						</h1>
-						<p className="text-muted-foreground mt-1">Share and access study materials</p>
 					</div>
-					{/* <Button
-						onClick={() => setShowUpload(!showUpload)}
-						className="bg-[#006837] hover:bg-[#005530] gap-2"
-					>
-						<Upload className="w-4 h-4" />
-						{showUpload ? 'Hide Upload' : 'Upload File'}
-					</Button> */}
+					<p className="font-sarabun text-white/80 text-lg max-w-xl mx-auto">
+						รวมไฟล์เรียน เอกสาร และสื่อการสอนทั้งหมดในระบบ
+					</p>
 				</div>
+			</div>
 
-				{/* Upload Section */}
-				{showUpload && (
-					<FileUpload
-						onUploadComplete={() => {
-							loadFiles();
-							setShowUpload(false);
-						}}
-					/>
-				)}
-
+			{/* Content */}
+			<div className="max-w-5xl mx-auto px-6 py-10 space-y-8">
 				{/* Stats */}
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-					<Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Total Files
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className="text-2xl font-bold">{files.length}</p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Total Downloads
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className="text-2xl font-bold">
-								{files.reduce((sum, file) => sum + file.downloads, 0)}
-							</p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Your Uploads
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className="text-2xl font-bold">
-								{files.filter((f) => f.uploadedBy === session?.userId).length}
-							</p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader className="pb-2">
-							<CardTitle className="text-sm font-medium text-muted-foreground">
-								Storage Used
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<p className="text-2xl font-bold">{formatFileSize(totalSize)}</p>
-						</CardContent>
-					</Card>
-				</div>
-
-				{/* Search Public Folders Button */}
-				<div className="flex justify-center my-6">
-					<Card
-						className="w-full max-w-full bg-white border-2 text-[#006837] hover:bg-slate-50 rounded-2xl shadow-lg cursor-pointer transition-colors"
-						onClick={() => router.push('/library/folders')}
-					>
-						<CardHeader className="flex flex-row items-center justify-between p-6">
-							<div className="text-xl font-bold">ค้นหาโฟลเดอร์สาธารณะ</div>
-							<div className="text-sm font-medium text-muted-foreground">Search Public Folders</div>
-						</CardHeader>
-						{/* Removed CardContent as it wasn't used */}
-					</Card>
-				</div>
-
-				{/* Search Bar */}
-				<Card>
-					<CardContent className="pt-6">
-						<div className="flex flex-col md:flex-row gap-4">
-							<div className="flex-1 relative">
-								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-								<Input
-									placeholder="Search files..."
-									className="pl-10"
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-								/>
-							</div>
-							<div className="flex gap-2">
-								<Button variant="outline" className="gap-2">
-									<Filter className="w-4 h-4" />
-									Filter
-								</Button>
-							</div>
+				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+					{[
+						{ label: 'ไฟล์ทั้งหมด', labelEn: 'Total Files', value: result?.total ?? '—' },
+						{
+							label: 'ดาวน์โหลดรวม',
+							labelEn: 'Total Downloads',
+							value: files.reduce((s, f) => s + f.downloads, 0),
+						},
+						{
+							label: 'ไฟล์ของฉัน',
+							labelEn: 'Your Uploads',
+							value: files.filter((f) => f.uploadedBy === session?.userId).length,
+						},
+						{
+							label: 'พื้นที่ใช้งาน',
+							labelEn: 'Storage (page)',
+							value: formatFileSize(files.reduce((s, f) => s + f.size, 0)),
+						},
+					].map((stat) => (
+						<div
+							key={stat.labelEn}
+							className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+						>
+							<p className="font-sarabun text-xs text-gray-400 font-medium">{stat.labelEn}</p>
+							<p className="font-sarabun text-2xl font-bold text-gray-800 mt-1">{stat.value}</p>
+							<p className="font-sarabun text-sm text-gray-500">{stat.label}</p>
 						</div>
-					</CardContent>
-				</Card>
+					))}
+				</div>
+
+				{/* Search */}
+				<div className="relative">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+					<Input
+						placeholder="ค้นหาไฟล์... / Search files..."
+						className="pl-10"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+					/>
+				</div>
 
 				{/* Files List */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Files</CardTitle>
-						<CardDescription>{filteredFiles.length} files available</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{loading ? (
-							<div className="text-center py-12">
-								<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-								<p className="text-muted-foreground">Loading files...</p>
-							</div>
-						) : filteredFiles.length === 0 ? (
-							<div className="text-center py-12">
-								<FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-								<p className="text-muted-foreground">
-									{searchQuery ? 'No files found' : 'No files uploaded yet'}
-								</p>
-							</div>
-						) : (
-							<div className="space-y-2">
-								{filteredFiles.map((file) => (
-									<div
-										key={file.id}
-										className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent transition-colors"
-									>
-										<div className="flex items-center gap-4 flex-1">
-											<div className="text-3xl">{getFileIcon(file.mimetype)}</div>
-											<div className="flex-1">
-												<p className="font-medium">{file.originalName}</p>
-												<p className="text-sm text-muted-foreground">
-													{formatFileSize(file.size)} • Uploaded by {file.uploaderName || 'Unknown'}{' '}
-													• {new Date(file.createdAt).toLocaleDateString()}
-												</p>
-											</div>
-											<div className="flex items-center gap-2 text-sm text-muted-foreground mr-5">
-												<Download className="w-4 h-4" />
-												<span>{file.downloads}</span>
-											</div>
-										</div>
-										<div className="flex items-center gap-2">
+				<div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+					<div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+						<div>
+							<h2 className="font-sarabun font-bold text-gray-800 text-lg">ไฟล์ทั้งหมด</h2>
+							<p className="font-sarabun text-sm text-gray-400">
+								{`หน้า ${currentPage} จาก ${result?.totalPages ?? 1} — ทั้งหมด ${result?.total ?? 0} ไฟล์`}
+							</p>
+						</div>
+					</div>
+
+					{loading ? (
+						<div className="flex flex-col items-center justify-center py-24 gap-4">
+							<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
+							<p className="font-sarabun text-gray-500">กำลังโหลดไฟล์...</p>
+						</div>
+					) : files.length === 0 ? (
+						<div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
+							<FileText className="w-12 h-12 text-gray-300" />
+							<p className="font-sarabun text-gray-500">
+								{searchQuery ? 'ไม่พบไฟล์ที่ค้นหา' : 'ยังไม่มีไฟล์ในระบบ'}
+							</p>
+						</div>
+					) : (
+						<div className="divide-y divide-gray-100">
+							{files.map((file) => (
+								<div
+									key={file.id}
+									className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+								>
+									<span className="text-3xl shrink-0">{getFileIcon(file.mimetype)}</span>
+									<div className="flex-1 min-w-0">
+										<p className="font-sarabun font-medium text-gray-800 truncate">
+											{file.originalName}
+										</p>
+										<p className="font-sarabun text-xs text-gray-400 mt-0.5">
+											{formatFileSize(file.size)} · {file.uploaderName ?? 'Unknown'} ·{' '}
+											{new Date(file.createdAt).toLocaleDateString('th-TH')}
+										</p>
+									</div>
+									<div className="flex items-center gap-1 text-xs text-gray-400 shrink-0 mr-2">
+										<Download className="w-3.5 h-3.5" />
+										<span>{file.downloads}</span>
+									</div>
+									<div className="flex items-center gap-2 shrink-0">
+										<Button
+											size="sm"
+											className="bg-[#006837] hover:bg-[#005530] text-white gap-1.5"
+											onClick={() => handleDownload(file.id, file.originalName)}
+										>
+											<Download className="w-3.5 h-3.5" />
+											ดาวน์โหลด
+										</Button>
+										{file.uploadedBy === session?.userId && (
 											<Button
 												size="sm"
-												variant="outline"
-												className="gap-2"
-												onClick={() => handleDownload(file.id, file.originalName)}
+												variant="ghost"
+												onClick={() => handleDelete(file.id)}
+												className="text-red-500 hover:text-red-600 hover:bg-red-50"
 											>
-												<Download className="w-4 h-4" />
-												Download
+												<Trash2 className="w-4 h-4" />
 											</Button>
-											{file.uploadedBy === session?.userId && (
-												<Button
-													size="sm"
-													variant="ghost"
-													onClick={() => handleDelete(file.id)}
-													className="text-red-600 hover:text-red-700 hover:bg-red-50"
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											)}
-										</div>
+										)}
 									</div>
-								))}
-							</div>
-						)}
-					</CardContent>
-				</Card>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+
+				{/* Pagination */}
+				{result && result.totalPages > 1 && (
+					<div className="flex justify-center pt-2">
+						<Pagination
+							currentPage={currentPage}
+							totalPages={result.totalPages}
+							onPageChange={handlePageChange}
+							hasNext={result.hasNext}
+							hasPrev={result.hasPrev}
+							total={result.total}
+							limit={PAGE_LIMIT}
+						/>
+					</div>
+				)}
 			</div>
 		</main>
 	);

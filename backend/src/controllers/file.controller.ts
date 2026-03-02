@@ -113,8 +113,14 @@ export const getAllFilesController = async (
 	res: Response
 ): Promise<void> => {
 	try {
-		const files = await getAllFiles();
-		res.status(200).json(files);
+		const page = Math.max(1, parseInt(req.query.page as string) || 1);
+		const limit = Math.min(
+			100,
+			Math.max(1, parseInt(req.query.limit as string) || 20)
+		);
+		const search = (req.query.search as string) ?? '';
+		const result = await getAllFiles(page, limit, search);
+		res.status(200).json(result);
 	} catch (error) {
 		console.error('Error fetching files:', error);
 		res.status(500).json({ error: 'Failed to fetch files' });

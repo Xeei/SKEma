@@ -1,9 +1,19 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function customMiddleware(request: NextRequest) {
+	const { pathname } = request.nextUrl;
+
+	// Protect /admin — only ADMIN role may access
+	if (pathname.startsWith('/admin')) {
+		const token = await getToken({ req: request });
+		if (!token || token.role !== 'ADMIN') {
+			return NextResponse.redirect(new URL('/', request.url));
+		}
+	}
+
 	return NextResponse.next();
 }
 

@@ -2,8 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 import { Sarabun } from 'next/font/google';
-import { FolderOpen, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, ShieldCheck, FolderOpen, LayoutDashboard } from 'lucide-react';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -12,39 +13,59 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
-const HUB_CARDS = [
+const ADMIN_CARDS = [
 	{
-		key: 'folders',
-		href: '/folders',
+		key: 'pending',
+		href: '/admin/pending',
+		icon: Clock,
+		iconBg: 'bg-amber-100',
+		iconColor: 'text-amber-700',
+		border: 'border-amber-200',
+		bg: 'bg-amber-50 hover:bg-amber-100',
+		title: 'โพสต์รออนุมัติ',
+		titleEn: 'Pending Posts',
+		description: 'ตรวจสอบและอนุมัติโพสต์ที่ส่งมาจากผู้ใช้ทั่วไปก่อนเผยแพร่สู่สาธารณะ',
+	},
+	{
+		key: 'main folders',
+		href: '/library/folders',
 		icon: FolderOpen,
 		iconBg: 'bg-emerald-100',
 		iconColor: 'text-emerald-700',
 		border: 'border-emerald-200',
 		bg: 'bg-emerald-50 hover:bg-emerald-100',
-		title: 'คลังเอกสาร',
-		titleEn: 'File Folders',
-		description: 'เอกสาร โจทย์การบ้าน และแหล่งเรียนรู้ จัดเรียงตามวิชาและปีการศึกษา',
+		title: 'จัดการโฟลเดอร์',
+		titleEn: 'Manage Folders',
+		description: 'ดูและจัดการโฟลเดอร์หลักทั้งหมดในระบบคลังเอกสาร',
 	},
 	{
-		key: 'admin',
-		href: '/admin',
-		icon: ShieldCheck,
+		key: 'website summary',
+		href: '/library',
+		icon: LayoutDashboard,
 		iconBg: 'bg-blue-100',
 		iconColor: 'text-blue-700',
 		border: 'border-blue-200',
 		bg: 'bg-blue-50 hover:bg-blue-100',
-		title: 'แผงควบคุมผู้ดูแล',
-		titleEn: 'Admin Panel',
-		description: 'จัดการโพสต์ รออนุมัติ และดูแลระบบโดยผู้ดูแล',
+		title: 'ภาพรวมเว็บไซต์',
+		titleEn: 'Website Summary',
+		description: 'ดูภาพรวมของคลังเอกสาร โพสต์ และไฟล์ทั้งหมดในระบบ',
 	},
 ];
 
-export default function Home() {
+export default function AdminPage() {
 	const router = useRouter();
-	const { data: session } = useSession();
-	const isAdmin = session?.role === 'ADMIN';
+	const { data: session, status } = useSession();
 
-	const visibleCards = HUB_CARDS.filter((c) => c.key !== 'admin' || isAdmin);
+	useEffect(() => {
+		if (status === 'loading') return;
+		if (!session || session.role !== 'ADMIN') {
+			router.replace('/');
+		}
+	}, [session, status, router]);
+
+	if (status === 'loading' || !session || session.role !== 'ADMIN') {
+		return null;
+	}
 
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
@@ -52,24 +73,27 @@ export default function Home() {
 			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-14 px-6">
 				<div className="max-w-5xl mx-auto text-center">
 					<span className="inline-block bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-5 font-sarabun">
-						คณะวิชาวิศวกรรมซอฟต์แวร์และความรู้
+						สำหรับผู้ดูแลระบบเท่านั้น
 					</span>
-					<h1 className="font-sarabun text-5xl font-bold mb-3 tracking-tight">
-						SKE <span className="text-[#FDB913]">Schema</span>
-					</h1>
-					<p className="font-sarabun text-white/80 text-lg mb-8 max-w-xl mx-auto">
-						แหล่งรวมเอกสาร โจทย์การบ้าน และแหล่งเรียนรู้ — จัดเรียงตามวิชาและปีการศึกษา
+					<div className="flex items-center justify-center gap-3 mb-3">
+						<ShieldCheck className="w-10 h-10 text-[#FDB913]" />
+						<h1 className="font-sarabun text-5xl font-bold tracking-tight">
+							Admin <span className="text-[#FDB913]">Panel</span>
+						</h1>
+					</div>
+					<p className="font-sarabun text-white/80 text-lg max-w-xl mx-auto">
+						แผงควบคุมสำหรับผู้ดูแลระบบ — จัดการและตรวจสอบเนื้อหาบนแพลตฟอร์ม
 					</p>
 				</div>
 			</div>
 
-			{/* Hub Cards */}
+			{/* Admin Cards */}
 			<div className="max-w-5xl mx-auto px-6 py-14">
 				<h2 className="font-sarabun text-sm font-semibold text-gray-500 mb-6 text-center tracking-wide uppercase">
-					เลือกส่วนที่ต้องการ
+					เครื่องมือผู้ดูแล
 				</h2>
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-6xl mx-auto">
-					{visibleCards.map((card) => {
+					{ADMIN_CARDS.map((card) => {
 						const Icon = card.icon;
 						return (
 							<div

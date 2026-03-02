@@ -363,6 +363,13 @@ export default function PostDetailPage() {
 							<div className="whitespace-pre-wrap text-base leading-relaxed">{post.content}</div>
 						</div>
 					</CardContent>
+
+					{/* Additional Info */}
+					<CardContent className="pt-6">
+						<p className="text-xs text-muted-foreground text-right">
+							Last updated: {new Date(post.updatedAt).toLocaleString()}
+						</p>
+					</CardContent>
 				</Card>
 
 				{/* Attached Files */}
@@ -444,15 +451,6 @@ export default function PostDetailPage() {
 						</CardContent>
 					</Card>
 				)}
-
-				{/* Additional Info */}
-				<Card>
-					<CardContent className="pt-6">
-						<p className="text-xs text-muted-foreground">
-							Last updated: {new Date(post.updatedAt).toLocaleString()}
-						</p>
-					</CardContent>
-				</Card>
 			</div>
 		</main>
 	);

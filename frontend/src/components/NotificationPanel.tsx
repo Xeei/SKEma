@@ -61,7 +61,7 @@ export function NotificationPanel({ open, onClose }: Props) {
 	return (
 		<div
 			ref={panelRef}
-			className="absolute right-0 top-full mt-3 w-80 sm:w-96 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+			className="absolute right-0 top-full mt-10 w-80 sm:w-96 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
 		>
 			{/* Panel header */}
 			<div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">

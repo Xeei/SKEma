@@ -47,16 +47,62 @@ export const createFile = async (
 	return result.rows[0];
 };
 
-export const getAllFiles = async (): Promise<FileMetadata[]> => {
+export interface PaginatedFiles {
+	data: FileMetadata[];
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export const getAllFiles = async (
+	page: number = 1,
+	limit: number = 20,
+	search: string = ''
+): Promise<PaginatedFiles> => {
 	const pool: Pool = await getDbConnection();
-	const queryText = `
+	const offset = (page - 1) * limit;
+	const searchParam = search ? `%${search}%` : null;
+
+	const countResult = searchParam
+		? await pool.query(
+				'SELECT COUNT(*) FROM files WHERE "originalName" ILIKE $1',
+				[searchParam]
+			)
+		: await pool.query('SELECT COUNT(*) FROM files');
+	const total = parseInt(countResult.rows[0].count, 10);
+	const totalPages = Math.ceil(total / limit) || 1;
+
+	const queryText = searchParam
+		? `
         SELECT f.*, u.name as "uploaderName", u.email as "uploaderEmail"
         FROM files f
         LEFT JOIN users u ON f."uploadedBy" = u.id
-        ORDER BY f."createdAt" DESC;
+        WHERE f."originalName" ILIKE $3
+        ORDER BY f."createdAt" DESC
+        LIMIT $1 OFFSET $2;
+    `
+		: `
+        SELECT f.*, u.name as "uploaderName", u.email as "uploaderEmail"
+        FROM files f
+        LEFT JOIN users u ON f."uploadedBy" = u.id
+        ORDER BY f."createdAt" DESC
+        LIMIT $1 OFFSET $2;
     `;
-	const result = await pool.query(queryText);
-	return result.rows;
+	const values = searchParam ? [limit, offset, searchParam] : [limit, offset];
+	const result = await pool.query(queryText, values);
+
+	return {
+		data: result.rows,
+		total,
+		page,
+		limit,
+		totalPages,
+		hasNext: page < totalPages,
+		hasPrev: page > 1,
+	};
 };
 
 export const getFileById = async (id: string): Promise<FileMetadata | null> => {
