@@ -59,9 +59,7 @@ export function VoteButtons({
 				onClick={() => handleVote('UPVOTE')}
 				disabled={!enabled || loading}
 				className={`flex items-center gap-1.5 transition-colors ${
-					myVote === 'UPVOTE'
-						? 'text-[#006837]'
-						: 'hover:text-[#006837]'
+					myVote === 'UPVOTE' ? 'text-[#006837]' : 'hover:text-[#006837]'
 				}`}
 				aria-label="Upvote"
 				aria-pressed={myVote === 'UPVOTE'}
@@ -77,9 +75,7 @@ export function VoteButtons({
 				onClick={() => handleVote('DOWNVOTE')}
 				disabled={!enabled || loading}
 				className={`flex items-center gap-1.5 transition-colors ${
-					myVote === 'DOWNVOTE'
-						? 'text-red-500'
-						: 'hover:text-red-500'
+					myVote === 'DOWNVOTE' ? 'text-red-500' : 'hover:text-red-500'
 				}`}
 				aria-label="Downvote"
 				aria-pressed={myVote === 'DOWNVOTE'}
@@ -87,6 +83,10 @@ export function VoteButtons({
 				<ThumbsDown className="w-4 h-4" />
 				<span className="font-semibold">{downvotes}</span>
 			</Button>
+
+			<span className="text-xs text-muted-foreground/60 italic">
+				ถ้าโพสนี้มีประโยชน์ฝากกดไลค์สนับสนุนเจ้าของโพสด้วยครับ
+			</span>
 		</div>
 	);
 }

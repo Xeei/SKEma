@@ -46,7 +46,7 @@ export function Header() {
 				{status === 'loading' ? (
 					<div className="w-10 h-10 rounded-full bg-white/20 animate-pulse" />
 				) : status === 'authenticated' && session?.user ? (
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-6">
 						{/* Admin quick-link bell — shows pending count badge
 						{isPrivileged && (
 							<Link
