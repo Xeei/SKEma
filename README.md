@@ -17,3 +17,8 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 
 ## Database Diagram
 * [https://dbdiagram.io/d/68abda871e7a611967642547](https://dbdiagram.io/d/69918f37bd82f5fce2beb8b4)
+
+## Star History
+- Please Star to support me :)
+
+[![Star History Chart](https://api.star-history.com/image?repos=MunyinSam/SKE-Schema&type=date&legend=top-left)](https://www.star-history.com/?repos=MunyinSam%2FSKE-Schema&type=date&legend=top-left)

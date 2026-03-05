@@ -6,6 +6,7 @@ import {
 	getUserByIdController,
 	getUserByEmailController,
 	getAllUsersController,
+	searchUsersController,
 } from '../controllers/user.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
@@ -16,6 +17,9 @@ router.post('/', createUserController);
 
 // GET /api/v1/users - Get all users
 router.get('/', authMiddleware, getAllUsersController);
+
+// GET /api/v1/users/search?q=xxx - Search users by name or email
+router.get('/search', authMiddleware, searchUsersController);
 
 // GET /api/v1/users/email?email=xxx - Get user by email
 router.get('/email', getUserByEmailController);

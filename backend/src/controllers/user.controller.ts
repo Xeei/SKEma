@@ -7,6 +7,7 @@ import {
 	getUserById,
 	getUserByEmail,
 	getAllUsers,
+	searchUsers,
 } from '../models/user.model';
 
 const userIdSchema = z.object({ id: z.string() });
@@ -135,6 +136,26 @@ export const getAllUsersController = async (
 ) => {
 	try {
 		const users = await getAllUsers();
+		return res.status(200).json(users);
+	} catch (err) {
+		next(err);
+	}
+};
+
+export const searchUsersController = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const q = (req.query.q as string) || '';
+		if (q.trim().length < 1) {
+			return res.status(200).json([]);
+		}
+		// Exclude the requesting user from results
+		const excludeId = req.user?.id;
+		const limit = Math.min(parseInt(req.query.limit as string) || 10, 20);
+		const users = await searchUsers(q.trim(), excludeId, limit);
 		return res.status(200).json(users);
 	} catch (err) {
 		next(err);

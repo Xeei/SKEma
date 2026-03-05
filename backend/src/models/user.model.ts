@@ -85,3 +85,33 @@ export const getAllUsers = async () => {
 	const result = await pool.query(queryText);
 	return result.rows;
 };
+
+export const searchUsers = async (
+	query: string,
+	excludeId?: string,
+	limit: number = 10
+) => {
+	const pool: Pool = await getDbConnection();
+	const searchParam = `%${query}%`;
+	const queryText = excludeId
+		? `
+			SELECT id, email, name
+			FROM users
+			WHERE (email ILIKE $1 OR name ILIKE $1)
+			  AND id != $2
+			ORDER BY name ASC, email ASC
+			LIMIT $3;
+		`
+		: `
+			SELECT id, email, name
+			FROM users
+			WHERE (email ILIKE $1 OR name ILIKE $1)
+			ORDER BY name ASC, email ASC
+			LIMIT $2;
+		`;
+	const values = excludeId
+		? [searchParam, excludeId, limit]
+		: [searchParam, limit];
+	const result = await pool.query(queryText, values);
+	return result.rows;
+};

@@ -10,6 +10,8 @@ export interface PostShareData {
 	authorId: string;
 	sharedUserId: string;
 	sharedAt: string;
+	sharedUserName?: string | null;
+	sharedUserEmail?: string;
 }
 
 // Share a post with a user

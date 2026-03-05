@@ -7,6 +7,8 @@ export interface PostShareData {
 	authorId: string;
 	sharedUserId: string;
 	sharedAt: Date;
+	sharedUserName?: string | null;
+	sharedUserEmail?: string;
 }
 
 // Share a post with a user
@@ -25,12 +27,18 @@ export const createPostShare = async (
 	return result.rows[0];
 };
 
-// Get all shares for a specific post
+// Get all shares for a specific post (with shared user info)
 export const getPostSharesByPost = async (
 	postId: string
 ): Promise<PostShareData[]> => {
 	const pool: Pool = await getDbConnection();
-	const query = `SELECT * FROM post_shares WHERE "postId" = $1 ORDER BY "sharedAt" DESC`;
+	const query = `
+		SELECT ps.*, u.name AS "sharedUserName", u.email AS "sharedUserEmail"
+		FROM post_shares ps
+		JOIN users u ON u.id = ps."sharedUserId"
+		WHERE ps."postId" = $1
+		ORDER BY ps."sharedAt" DESC
+	`;
 	const result = await pool.query(query, [postId]);
 	return result.rows;
 };

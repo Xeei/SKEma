@@ -44,3 +44,18 @@ export const getUserByEmail = async (email: string): Promise<t.User | null> => {
 		throw error;
 	}
 };
+
+export interface UserSearchResult {
+	id: string;
+	email: string;
+	name: string | null;
+}
+
+export const searchUsers = async (
+	query: string,
+	limit: number = 10
+): Promise<UserSearchResult[]> => {
+	if (!query.trim()) return [];
+	const { data } = await instance.get('/search', { params: { q: query.trim(), limit } });
+	return data;
+};
