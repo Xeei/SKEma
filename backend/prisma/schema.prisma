@@ -43,6 +43,8 @@ model User {
   posts     Post[]   @relation("PostAuthor")
   notifications Notification[]
   postVotes PostVote[]
+  postSharesGiven    PostShare[] @relation("PostShareAuthor")
+  postSharesReceived PostShare[] @relation("PostShareRecipient")
 
   @@map("users")
 }
@@ -150,6 +152,9 @@ model Post {
   folderId    String?
   folder      FileFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   
+  // Shared access
+  shares      PostShare[]
+
   // Timestamps
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -186,6 +191,24 @@ model PostFile {
   
   @@unique([postId, fileId])
   @@map("post_files")
+}
+
+model PostShare {
+  id           String   @id @default(cuid())
+  postId       String
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId     String
+  author       User     @relation("PostShareAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  sharedUserId String
+  sharedUser   User     @relation("PostShareRecipient", fields: [sharedUserId], references: [id], onDelete: Cascade)
+
+  sharedAt     DateTime @default(now())
+
+  // A user may only be granted access to the same post once
+  @@unique([postId, sharedUserId])
+  @@map("post_shares")
 }
 
 model Notification {

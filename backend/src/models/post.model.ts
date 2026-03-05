@@ -395,71 +395,218 @@ export const getPostsByFolder = async (
 	folderId: string,
 	page: number = 1,
 	limit: number = 10,
-	search: string = ''
+	search: string = '',
+	userId?: string | null
 ): Promise<PaginatedResponse<PostMetadata>> => {
 	const pool: Pool = await getDbConnection();
 	const offset = (page - 1) * limit;
 	const searchParam = search ? `%${search}%` : null;
 
-	// Get total count
-	const countQuery = searchParam
-		? `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED' AND (p.title ILIKE $2 OR p.description ILIKE $2)`
-		: `SELECT COUNT(DISTINCT p.id)::int as count FROM posts p WHERE p."folderId" = $1 AND p.status = 'APPROVED'`;
-	const countResult = await pool.query(
-		countQuery,
-		searchParam ? [folderId, searchParam] : [folderId]
-	);
-	const total = countResult.rows[0].count;
+	// ── Query building helpers ────────────────────────────────────────────────
+	//
+	// When a userId is supplied we LEFT JOIN post_shares so that:
+	//   - PUBLIC  posts are always visible
+	//   - The author's own posts (any privacy) are visible
+	//   - SHARED  posts where a post_shares row exists for this user are visible
+	//     (detected by ps.id IS NOT NULL after the join)
+	//
+	// When no userId (unauthenticated) we skip the join entirely and only show
+	// PUBLIC posts.
+	//
+	// Parameter layout (both count and data queries):
+	//   $1 = folderId
+	//   $2 = userId          (only when userId present)
+	//   $3 = searchParam     (only when search present AND userId present)
+	//   -- OR --
+	//   $2 = searchParam     (only when search present AND no userId)
+	//
+	// Data query additionally uses $X = limit, $Y = offset appended at the end.
 
-	// Get paginated data
-	const queryText = searchParam
-		? `
-        SELECT 
-            p.*,
-            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
-            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
-            COUNT(pf.id)::int as "fileCount"
-        FROM posts p
-        LEFT JOIN users u ON p."authorId" = u.id
-        LEFT JOIN post_files pf ON p.id = pf."postId"
-        WHERE p."folderId" = $1 AND p.status = 'APPROVED'
-          AND (p.title ILIKE $4 OR p.description ILIKE $4)
-        GROUP BY p.id, u.name, u.email
-        ORDER BY p."createdAt" DESC
-        LIMIT $2 OFFSET $3;
-    `
-		: `
-        SELECT 
-            p.*,
-            CASE WHEN p."isAnonymous" THEN NULL ELSE u.name END as "authorName",
-            CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END as "authorEmail",
-            COUNT(pf.id)::int as "fileCount"
-        FROM posts p
-        LEFT JOIN users u ON p."authorId" = u.id
-        LEFT JOIN post_files pf ON p.id = pf."postId"
-        WHERE p."folderId" = $1 AND p.status = 'APPROVED'
-        GROUP BY p.id, u.name, u.email
-        ORDER BY p."createdAt" DESC
-        LIMIT $2 OFFSET $3;
-    `;
-	const values = searchParam
-		? [folderId, limit, offset, searchParam]
-		: [folderId, limit, offset];
-	const result = await pool.query(queryText, values);
+	if (userId) {
+		// ── Authenticated path ───────────────────────────────────────────────
+		// JOIN: $1=folderId  $2=userId
+		const joinClause = `
+			LEFT JOIN post_shares ps
+				ON ps."postId" = p.id AND ps."sharedUserId" = $2
+		`;
+		const privacyWhere = `
+			AND (
+				p."privacy" = 'PUBLIC'
+				OR p."authorId" = $2
+				OR (p."privacy" = 'SHARED' AND ps.id IS NOT NULL)
+			)
+		`;
 
-	const totalPages = Math.ceil(total / limit);
+		// Count
+		let countQuery: string;
+		let countParams: any[];
 
-	return {
-		data: result.rows,
-		pagination: {
-			total,
-			page,
-			limit,
-			totalPages,
-			hasNext: page < totalPages,
-			hasPrev: page > 1,
-		},
-	};
+		if (searchParam) {
+			// $1=folderId, $2=userId, $3=searchParam
+			countQuery = `
+				SELECT COUNT(DISTINCT p.id)::int AS count
+				FROM posts p
+				${joinClause}
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND (p.title ILIKE $3 OR p.description ILIKE $3)
+				  ${privacyWhere}
+			`;
+			countParams = [folderId, userId, searchParam];
+		} else {
+			// $1=folderId, $2=userId
+			countQuery = `
+				SELECT COUNT(DISTINCT p.id)::int AS count
+				FROM posts p
+				${joinClause}
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  ${privacyWhere}
+			`;
+			countParams = [folderId, userId];
+		}
+
+		const countResult = await pool.query(countQuery, countParams);
+		const total = countResult.rows[0].count;
+
+		// Data
+		// Fixed tail: limit and offset are always the last two params.
+		let queryText: string;
+		let values: any[];
+
+		if (searchParam) {
+			// $1=folderId, $2=userId, $3=searchParam, $4=limit, $5=offset
+			queryText = `
+				SELECT
+					p.*,
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.name  END AS "authorName",
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END AS "authorEmail",
+					COUNT(pf.id)::int AS "fileCount"
+				FROM posts p
+				LEFT JOIN users u ON p."authorId" = u.id
+				LEFT JOIN post_files pf ON p.id = pf."postId"
+				${joinClause}
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND (p.title ILIKE $3 OR p.description ILIKE $3)
+				  ${privacyWhere}
+				GROUP BY p.id, u.name, u.email
+				ORDER BY p."createdAt" DESC
+				LIMIT $4 OFFSET $5;
+			`;
+			values = [folderId, userId, searchParam, limit, offset];
+		} else {
+			// $1=folderId, $2=userId, $3=limit, $4=offset
+			queryText = `
+				SELECT
+					p.*,
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.name  END AS "authorName",
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END AS "authorEmail",
+					COUNT(pf.id)::int AS "fileCount"
+				FROM posts p
+				LEFT JOIN users u ON p."authorId" = u.id
+				LEFT JOIN post_files pf ON p.id = pf."postId"
+				${joinClause}
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  ${privacyWhere}
+				GROUP BY p.id, u.name, u.email
+				ORDER BY p."createdAt" DESC
+				LIMIT $3 OFFSET $4;
+			`;
+			values = [folderId, userId, limit, offset];
+		}
+
+		const result = await pool.query(queryText, values);
+		const totalPages = Math.ceil(total / limit);
+
+		return {
+			data: result.rows,
+			pagination: { total, page, limit, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
+		};
+	} else {
+		// ── Unauthenticated path — PUBLIC posts only, no join needed ─────────
+		let countQuery: string;
+		let countParams: any[];
+
+		if (searchParam) {
+			// $1=folderId, $2=searchParam
+			countQuery = `
+				SELECT COUNT(DISTINCT p.id)::int AS count
+				FROM posts p
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND p."privacy" = 'PUBLIC'
+				  AND (p.title ILIKE $2 OR p.description ILIKE $2)
+			`;
+			countParams = [folderId, searchParam];
+		} else {
+			// $1=folderId
+			countQuery = `
+				SELECT COUNT(DISTINCT p.id)::int AS count
+				FROM posts p
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND p."privacy" = 'PUBLIC'
+			`;
+			countParams = [folderId];
+		}
+
+		const countResult = await pool.query(countQuery, countParams);
+		const total = countResult.rows[0].count;
+
+		let queryText: string;
+		let values: any[];
+
+		if (searchParam) {
+			// $1=folderId, $2=searchParam, $3=limit, $4=offset
+			queryText = `
+				SELECT
+					p.*,
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.name  END AS "authorName",
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END AS "authorEmail",
+					COUNT(pf.id)::int AS "fileCount"
+				FROM posts p
+				LEFT JOIN users u ON p."authorId" = u.id
+				LEFT JOIN post_files pf ON p.id = pf."postId"
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND p."privacy" = 'PUBLIC'
+				  AND (p.title ILIKE $2 OR p.description ILIKE $2)
+				GROUP BY p.id, u.name, u.email
+				ORDER BY p."createdAt" DESC
+				LIMIT $3 OFFSET $4;
+			`;
+			values = [folderId, searchParam, limit, offset];
+		} else {
+			// $1=folderId, $2=limit, $3=offset
+			queryText = `
+				SELECT
+					p.*,
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.name  END AS "authorName",
+					CASE WHEN p."isAnonymous" THEN NULL ELSE u.email END AS "authorEmail",
+					COUNT(pf.id)::int AS "fileCount"
+				FROM posts p
+				LEFT JOIN users u ON p."authorId" = u.id
+				LEFT JOIN post_files pf ON p.id = pf."postId"
+				WHERE p."folderId" = $1
+				  AND p.status = 'APPROVED'
+				  AND p."privacy" = 'PUBLIC'
+				GROUP BY p.id, u.name, u.email
+				ORDER BY p."createdAt" DESC
+				LIMIT $2 OFFSET $3;
+			`;
+			values = [folderId, limit, offset];
+		}
+
+		const result = await pool.query(queryText, values);
+		const totalPages = Math.ceil(total / limit);
+
+		return {
+			data: result.rows,
+			pagination: { total, page, limit, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
+		};
+	}
 };
 
 // Get pending posts awaiting approval (admin use)

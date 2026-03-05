@@ -402,7 +402,16 @@ export const getPostsByFolderController = async (
 		const page = parseInt(req.query.page as string) || 1;
 		const limit = parseInt(req.query.limit as string) || 10;
 		const search = (req.query.search as string) || '';
-		const posts = await getPostsByFolder(folderId, page, limit, search);
+		// Pass the authenticated user's id so the model can include posts
+		// shared with them (SHARED privacy) as well as their own posts.
+		const userId = req.user?.id ?? null;
+		const posts = await getPostsByFolder(
+			folderId,
+			page,
+			limit,
+			search,
+			userId
+		);
 		res.json(posts);
 	} catch (err) {
 		console.error('Error fetching posts by folder:', err);
