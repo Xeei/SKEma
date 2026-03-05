@@ -21,4 +21,4 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 ## Star History
 - Please Star to support me :)
 
-[![Star History Chart](https://api.star-history.com/image?repos=MunyinSam/SKE-Schema&type=date&legend=top-left)](https://www.star-history.com/?repos=MunyinSam%2FSKE-Schema&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/image?repos=MunyinSam/SKE-Schema&type=timeline&legend=top-left)](https://www.star-history.com/?repos=MunyinSam%2FSKE-Schema&type=timeline&legend=bottom-right)
