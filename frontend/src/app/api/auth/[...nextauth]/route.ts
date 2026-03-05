@@ -39,10 +39,10 @@ const handler = NextAuth({
 					.filter(Boolean);
 				const isCustomAllowed = allowedEmails.includes(email);
 
-				// if (!isKuEmail && !isCustomAllowed) {
-				// 	console.warn(`Sign-in blocked for non-KU email: ${email}`);
-				// 	return false;
-				// }
+				if (!isKuEmail && !isCustomAllowed) {
+					console.warn(`Sign-in blocked for non-KU email: ${email}`);
+					return false;
+				}
 
 				try {
 					const existingUser = await getUserByEmail(user.email);

@@ -1,4 +1,9 @@
 import { Request, Response } from 'express';
+
+// Set to true to require admin approval for all posts from standard users.
+// Set to false to auto-approve every post regardless of role.
+const REQUIRE_APPROVAL = false;
+
 import {
 	createPost,
 	getAllPosts,
@@ -49,11 +54,10 @@ export const createPostController = async (req: Request, res: Response) => {
 			return res.status(400).json({ error: 'Missing required fields' });
 		}
 
-		// Determine post status based on user role
-		// ADMIN and TRUSTED users get approved immediately; STANDARD users need approval
+		// Determine post status based on approval policy and user role
 		const userRole = req.user?.role;
 		const status =
-			userRole === 'ADMIN' || userRole === 'TRUSTED'
+			!REQUIRE_APPROVAL || userRole === 'ADMIN' || userRole === 'TRUSTED'
 				? 'APPROVED'
 				: 'PENDING';
 
