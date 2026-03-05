@@ -170,7 +170,7 @@ export default function FolderDetailPage() {
 	const loadPosts = async (page: number = 1) => {
 		setSearching(true);
 		try {
-			const response = await getPostsByFolder(folderId, page, 4, debouncedSearch);
+			const response = await getPostsByFolder(folderId, page, 8, debouncedSearch);
 			setPosts(response.data);
 			setPostsPagination(response.pagination);
 		} catch {
@@ -298,7 +298,7 @@ export default function FolderDetailPage() {
 			</div>
 
 			{/* Content */}
-			<div className="max-w-5xl mx-auto px-6 py-8">
+			<div className="max-w-5xl mx-auto py-8">
 				{loading ? (
 					<div className="flex flex-col items-center justify-center py-24 gap-4">
 						<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
@@ -344,7 +344,7 @@ export default function FolderDetailPage() {
 						)}
 
 						{hasResults && (
-							<div className={`divide-y divide-gray-50 transition-opacity duration-150 ${searching ? 'opacity-50' : 'opacity-100'}`}>
+							<div className={`divide-y divide-gray-50 transition-opacity duration-150 ${searching ? 'opacity-50' : 'opacity-100'}overflow-auto`}>
 								{/* ── Subfolders (only on first posts page, or while searching) ── */}
 								{(postsPage === 1 || !!debouncedSearch) &&
 									subfolders.map((subfolder) => (

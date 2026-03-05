@@ -114,7 +114,7 @@ export default function PublicFoldersPage() {
 						{session?.role === 'ADMIN' && (
 							<button
 								onClick={() => setShowCreate(!showCreate)}
-								className="flex items-center gap-2 bg-[#FDB913] hover:bg-[#e5a610] text-[#003d1f] font-sarabun font-semibold px-5 py-2.5 rounded-lg transition-colors shrink-0"
+								className="flex items-center bg-white hover:bg-gray-300 gap-2 text-[#003d1f] font-sarabun font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors shrink-0"
 							>
 								<Plus className="w-4 h-4" />
 								สร้างโฟลเดอร์ใหม่

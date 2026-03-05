@@ -9,6 +9,7 @@ import {
 	ChevronRight,
 	ChevronLeft,
 	Eye,
+	ExternalLink,
 	Trash2,
 	Calendar,
 	FileText,
@@ -27,6 +28,7 @@ import {
 	AuthorStats,
 } from '@/services/post.service';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
+import { Pagination } from '@/components/Pagination';
 import Link from 'next/link';
 
 const sarabun = Sarabun({
@@ -36,7 +38,7 @@ const sarabun = Sarabun({
 	display: 'swap',
 });
 
-const POSTS_PER_PAGE = 4;
+const POSTS_PER_PAGE = 8;
 
 export default function ProfilePage() {
 	const { data: session, status } = useSession();
@@ -263,111 +265,94 @@ export default function ProfilePage() {
 								</p>
 							</div>
 						) : (
-							<>
-								<div className="space-y-3 mb-6">
+							<div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+								{/* Column headers */}
+								<div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-1.5 border-b border-gray-100 bg-gray-50 text-xs font-sarabun text-gray-400 font-medium gap-3 select-none">
+									<span className="w-5" />
+									<span>ชื่อ / Name</span>
+									<span className="w-32 text-right hidden sm:block">วันที่สร้าง</span>
+									<span className="w-24 text-right hidden md:block">ประเภท / Type</span>
+									<span className="w-20 text-right">โหวต</span>
+								</div>
+
+								<div className="divide-y divide-gray-50 h-70">
 									{posts.map((post) => (
-										<Link
+										<div
 											key={post.id}
-											href={`/library/post/${post.id}`}
-											className="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-sm hover:border-[#006837] transition-all"
+											onClick={() => router.push(`/library/post/${post.id}`)}
+											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 cursor-pointer group gap-3 transition-colors"
 										>
-											<div className="h-0.5 w-full bg-emerald-500" />
-											<div className="px-5 py-4">
-												<div className="flex items-start gap-4">
-													<div className="flex-1 min-w-0">
-														<h3 className="font-sarabun font-semibold text-gray-800 text-sm leading-snug truncate mb-1">
-															{post.title}
-														</h3>
-														<div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-															<span className="flex items-center gap-1">
-																<Calendar className="h-3 w-3" />
-																{new Date(post.createdAt).toLocaleDateString('th-TH', {
-																	day: 'numeric',
-																	month: 'short',
-																	year: 'numeric',
-																})}
-															</span>
-															{post.category && (
-																<span className="flex items-center gap-1">
-																	<Tag className="h-3 w-3" />
-																	{post.category}
-																</span>
-															)}
-															{post.fileCount != null && post.fileCount > 0 && (
-																<span className="flex items-center gap-1">
-																	<FileText className="h-3 w-3" />
-																	{post.fileCount} ไฟล์
-																</span>
-															)}
-														</div>
-														{post.description && (
-															<p className="font-sarabun text-xs text-gray-500 mt-1.5 line-clamp-1">
-																{post.description}
-															</p>
-														)}
-													</div>
-													<div className="flex items-center gap-1 shrink-0">
-														<button
-															className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-															title="ลบโพสต์"
-															onClick={(e) => {
-																e.preventDefault();
-																handleDelete(post.id);
-															}}
-														>
-															<Trash2 className="h-4 w-4" />
-														</button>
-													</div>
-												</div>
+											{/* Icon */}
+											<FileText className="w-5 h-5 text-[#006837] shrink-0" />
+											{/* Name */}
+											<div className="min-w-0 flex items-center gap-2">
+												<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-[#006837]">
+													{post.title}
+												</span>
+												{post.description && (
+													<span className="font-sarabun text-xs text-gray-400 truncate hidden lg:block">
+														— {post.description}
+													</span>
+												)}
+												{post.link && (
+													<a
+														href={post.link}
+														target="_blank"
+														rel="noopener noreferrer"
+														onClick={(e) => e.stopPropagation()}
+														className="shrink-0 text-blue-400 hover:text-blue-600"
+													>
+														<ExternalLink className="w-3 h-3" />
+													</a>
+												)}
 											</div>
-										</Link>
+											{/* Date */}
+											<span className="font-sarabun text-xs text-gray-400 w-32 text-right hidden sm:block shrink-0">
+												{new Date(post.createdAt).toLocaleDateString('th-TH', {
+													year: 'numeric',
+													month: 'short',
+													day: 'numeric',
+												})}
+											</span>
+											{/* Type */}
+											<span className="font-sarabun text-xs text-gray-400 w-24 text-right hidden md:block shrink-0">
+												{post.category ?? 'โพสต์'}
+											</span>
+											{/* Votes + delete */}
+											<div className="flex items-center justify-end gap-2 w-20 shrink-0">
+												<span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 font-medium">
+													<ThumbsUp className="w-3 h-3" />
+													{post.upvotes}
+												</span>
+												<button
+													className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+													title="ลบโพสต์"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleDelete(post.id);
+													}}
+												>
+													<Trash2 className="w-3.5 h-3.5" />
+												</button>
+											</div>
+										</div>
 									))}
 								</div>
 
-								{/* Pagination */}
 								{totalPages > 1 && (
-									<div className="flex flex-col items-center gap-3">
-										<p className="font-sarabun text-sm text-gray-400">
-											แสดง {(currentPage - 1) * POSTS_PER_PAGE + 1}–
-											{Math.min(currentPage * POSTS_PER_PAGE, approvedCount)} จาก {approvedCount}{' '}
-											โพสต์
-										</p>
-										<div className="flex items-center gap-2">
-											<button
-												onClick={() => loadPosts(Math.max(1, currentPage - 1))}
-												disabled={!pagination?.hasPrev}
-												className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium font-sarabun text-gray-600 hover:border-[#006837] hover:text-[#006837] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-											>
-												<ChevronLeft className="w-4 h-4" />
-												ก่อนหน้า
-											</button>
-											<div className="flex items-center gap-1">
-												{Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-													<button
-														key={page}
-														onClick={() => loadPosts(page)}
-														className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
-															page === currentPage
-																? 'bg-[#006837] text-white'
-																: 'border border-gray-200 text-gray-600 hover:border-[#006837] hover:text-[#006837]'
-														}`}
-													>
-														{page}
-													</button>
-												))}
-											</div>
-											<button
-												onClick={() => loadPosts(Math.min(totalPages, currentPage + 1))}
-												disabled={!pagination?.hasNext}
-												className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium font-sarabun text-gray-600 hover:border-[#006837] hover:text-[#006837] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-											>
-												ถัดไป
-												<ChevronRight className="w-4 h-4" />
-											</button>
-										</div>
+									<div className="px-4 py-4 border-t border-gray-100">
+										<Pagination
+											currentPage={currentPage}
+											totalPages={totalPages}
+											onPageChange={loadPosts}
+											hasNext={pagination?.hasNext ?? false}
+											hasPrev={pagination?.hasPrev ?? false}
+											total={approvedCount}
+											limit={POSTS_PER_PAGE}
+										/>
 									</div>
 								)}
-							</>
+							</div>
 						)}
 					</div>
 				</div>
