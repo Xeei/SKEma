@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { Metadata } from 'next';
 import { Inter, Sarabun } from 'next/font/google';
@@ -6,6 +6,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { SessionProvider } from 'next-auth/react';
 import { Header } from '@/components/Header';
+import { TermsDialogButton } from '@/components/TermsDialog';
 
 const inter = Inter({
 	variable: '--font-inter',
@@ -62,6 +63,7 @@ export default function RootLayout({
 									<p className="text-emerald-300 text-xs opacity-75">
 										This project is open source. Feel free to report issues or contribute.
 									</p>
+									<TermsDialogButton />
 								</div>
 							</div>
 						</footer>

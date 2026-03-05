@@ -150,7 +150,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 							className="bg-[#006837] hover:bg-[#005530]"
 							onClick={handleConfirmedSubmit}
 						>
-							{isStandard ? 'Submit for Approval / ส่งเพื่อรอการอนุมัติ' : 'Post / โพส'}
+							{isStandard ? 'Post / โพส' : 'Post / โพส'}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -171,7 +171,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 						</DialogDescription>
 					</DialogHeader>
 
-					{isStandard && (
+					{/* {isStandard && (
 						<div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
 							<Clock className="mt-0.5 h-4 w-4 shrink-0" />
 							<span>
@@ -179,7 +179,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 								an admin before it appears publicly.
 							</span>
 						</div>
-					)}
+					)} */}
 
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div>
@@ -306,7 +306,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 								Cancel
 							</Button>
 							<Button type="submit" className="bg-[#006837] hover:bg-[#005530]" disabled={loading}>
-								{loading ? 'Submitting...' : isStandard ? 'Submit for Approval' : 'Create Post'}
+								{loading ? 'Submitting...' : isStandard ? 'Create Post' : 'Create Post'}
 							</Button>
 						</DialogFooter>
 					</form>

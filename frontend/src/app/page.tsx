@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Sarabun } from 'next/font/google';
 import { FolderOpen, ShieldCheck, ChevronRight, BookOpen, Trophy } from 'lucide-react';
+import { TermsDialog } from '@/components/TermsDialog';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -76,6 +77,7 @@ export default function Home() {
 
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
+			<TermsDialog />
 			{/* Hero Section */}
 			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-14 px-6">
 				<div className="max-w-5xl mx-auto text-center">
