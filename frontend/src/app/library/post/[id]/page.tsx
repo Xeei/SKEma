@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { EditPostDialog } from '@/components/EditPostDialog';
 import { SharePostDialog } from '@/components/SharePostDialog';
+import { ReportPostDialog } from '@/components/ReportPostDialog';
 import { VoteButtons } from '@/components/VoteButtons';
 import { ButtonGroup } from '@/components/ui/button-group';
 import Link from 'next/link';
@@ -207,7 +208,7 @@ export default function PostDetailPage() {
 						<ArrowLeft className="w-4 h-4" />
 						Back
 					</Button>
-					{(session?.userId === post.authorId || session?.role === 'ADMIN') && (
+					{session && (
 						<div className="flex gap-2">
 							<ButtonGroup>
 								<DropdownMenu>
@@ -216,13 +217,11 @@ export default function PostDetailPage() {
 											<MoreHorizontalIcon />
 										</Button>
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-44">
+									<DropdownMenuContent align="end" className="w-48">
 										<DropdownMenuGroup>
-											{session?.userId === post.authorId && (
-												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-													<SharePostDialog post={post} onUpdated={loadPost} asMenuItem />
-												</DropdownMenuItem>
-											)}
+											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+												<SharePostDialog post={post} onUpdated={loadPost} isAuthor={session?.userId === post.authorId} asMenuItem />
+											</DropdownMenuItem>
 											{session?.userId === post.authorId && (
 												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
 													<EditPostDialog post={post} onPostUpdated={loadPost} asMenuItem />
@@ -237,9 +236,19 @@ export default function PostDetailPage() {
 														disabled={deleting}
 														className="flex items-center gap-2"
 													>
-														{' '}
 														<Trash2 className="w-4 h-4" />
 														{deleting ? 'Deleting...' : 'Delete Post'}
+													</DropdownMenuItem>
+												</>
+											)}
+											{session?.userId !== post.authorId && (
+												<>
+													<DropdownMenuSeparator />
+													<DropdownMenuItem
+														variant="destructive"
+														onSelect={(e) => e.preventDefault()}
+													>
+														<ReportPostDialog postId={post.id} asMenuItem />
 													</DropdownMenuItem>
 												</>
 											)}
@@ -247,15 +256,6 @@ export default function PostDetailPage() {
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</ButtonGroup>
-							{/* <Button
-								variant="destructive"
-								onClick={handleDelete}
-								disabled={deleting}
-								className="flex items-center gap-2"
-							>
-								<Trash2 className="w-4 h-4" />
-								{deleting ? 'Deleting...' : 'Delete Post'}
-							</Button> */}
 						</div>
 					)}
 				</div>

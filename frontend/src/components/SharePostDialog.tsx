@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Globe, Lock, Users, Share2, X, Loader2, Check } from 'lucide-react';
+import { Globe, Lock, Users, Share2, X, Loader2, Check, Link } from 'lucide-react';
 import { PostData, updatePost } from '@/services/post.service';
 import {
 	createPostShare,
@@ -39,11 +39,40 @@ interface SharePostDialogProps {
 	post: PostData;
 	onUpdated?: () => void;
 	asMenuItem?: boolean;
+	isAuthor: boolean;
 }
 
-export function SharePostDialog({ post, onUpdated, asMenuItem }: SharePostDialogProps) {
+export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: SharePostDialogProps) {
 	const { data: session } = useSession();
 	const [open, setOpen] = useState(false);
+	const [copied, setCopied] = useState(false);
+
+	const handleCopyLink = () => {
+		const url = `${window.location.origin}/library/post/${post.id}`;
+		navigator.clipboard.writeText(url).then(() => {
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		});
+	};
+
+	if (!isAuthor) {
+		return asMenuItem ? (
+			<span className="flex items-center gap-2 w-full" onClick={handleCopyLink}>
+				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
+				{copied ? 'Copied!' : 'Share Link'}
+			</span>
+		) : (
+			<Button
+				variant="outline"
+				size="sm"
+				className="flex items-center gap-2"
+				onClick={handleCopyLink}
+			>
+				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
+				{copied ? 'Copied!' : 'Share Link'}
+			</Button>
+		);
+	}
 	const [privacy, setPrivacy] = useState<Privacy>(post.privacy as Privacy);
 	const [search, setSearch] = useState('');
 	const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);

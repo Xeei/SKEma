@@ -62,7 +62,11 @@ export const updateFolderSchema = z.object({
 	name: z.string().min(1).max(200).optional(),
 	description: z.string().max(1000).optional().nullable(),
 });
+// ── Post Report ─────────────────────────────────────────────────────────────
 
+export const reportPostSchema = z.object({
+	reason: z.string().max(500, 'Reason too long').optional().nullable(),
+});
 // ── File upload ───────────────────────────────────────────────────────────────
 
 export const uploadFileBodySchema = z.object({
