@@ -31,7 +31,7 @@ export const createPostSchema = z.object({
 	privacy: privacyEnum.default('PRIVATE'),
 	category: z.string().max(100, 'Category too long').optional().nullable(),
 	tags: z.array(z.string().max(50)).max(20, 'Max 20 tags').optional(),
-	folderId: z.string().cuid('Invalid folder ID').optional().nullable(),
+	folderId: z.string().uuid('Invalid folder ID').optional().nullable(),
 	isAnonymous: z.boolean().default(false),
 });
 
@@ -43,7 +43,7 @@ export const updatePostSchema = z.object({
 	privacy: privacyEnum.optional(),
 	category: z.string().max(100).optional().nullable(),
 	tags: z.array(z.string().max(50)).max(20).optional(),
-	folderId: z.string().cuid('Invalid folder ID').optional().nullable(),
+	folderId: z.string().uuid('Invalid folder ID').optional().nullable(),
 });
 
 // ── Folder ────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ export const createFolderSchema = z.object({
 		.max(1000, 'Description too long')
 		.optional()
 		.nullable(),
-	parentId: z.string().cuid('Invalid parent folder ID').optional().nullable(),
+	parentId: z.string().uuid('Invalid parent folder ID').optional().nullable(),
 });
 
 export const updateFolderSchema = z.object({
@@ -66,6 +66,6 @@ export const updateFolderSchema = z.object({
 // ── File upload ───────────────────────────────────────────────────────────────
 
 export const uploadFileBodySchema = z.object({
-	folderId: z.string().cuid('Invalid folder ID').optional().nullable(),
+	folderId: z.string().uuid('Invalid folder ID').optional().nullable(),
 	privacy: privacyEnum.default('PRIVATE'),
 });

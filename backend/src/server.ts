@@ -16,6 +16,7 @@ import fileshareRouter from './routes/fileshare.route';
 import postRouter from './routes/post.route';
 import notificationRouter from './routes/notification.route';
 import postshareRouter from './routes/postshare.route';
+import leaderboardRouter from './routes/leaderboard.route';
 
 // Initialize Express app
 const app: Express = express();
@@ -87,6 +88,7 @@ function configureRoutes(app: Express): void {
 	apiV1Router.use('/posts', postRouter);
 	apiV1Router.use('/notifications', notificationRouter);
 	apiV1Router.use('/postshares', postshareRouter);
+	apiV1Router.use('/leaderboard', leaderboardRouter);
 
 	// Mount v1 API router
 	app.use('/api/v1', apiV1Router);

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Sarabun } from 'next/font/google';
-import { FolderOpen, ShieldCheck, ChevronRight } from 'lucide-react';
+import { FolderOpen, ShieldCheck, ChevronRight, BookOpen, Trophy } from 'lucide-react';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -24,6 +24,20 @@ const HUB_CARDS = [
 		title: 'คลังเอกสาร',
 		titleEn: 'File Folders',
 		description: 'เอกสาร โจทย์การบ้าน และแหล่งเรียนรู้ จัดเรียงตามวิชาและปีการศึกษา',
+		permission: '',
+	},
+	{
+		key: 'leaderboard',
+		href: '/leaderboard',
+		icon: Trophy,
+		iconBg: 'bg-yellow-100',
+		iconColor: 'text-yellow-600',
+		border: 'border-yellow-200',
+		bg: 'bg-yellow-50 hover:bg-yellow-100',
+		title: 'ลีดเดอร์บอร์ด',
+		titleEn: 'Leaderboard',
+		description: '10 อันดับผู้ใช้ที่มีคะแนนโหวตสูงสุดจากโพสต์ที่ได้รับการอนุมัติ',
+		permission: '',
 	},
 	{
 		key: 'admin',
@@ -36,6 +50,20 @@ const HUB_CARDS = [
 		title: 'แผงควบคุมผู้ดูแล',
 		titleEn: 'Admin Panel',
 		description: 'จัดการโพสต์ รออนุมัติ และดูแลระบบโดยผู้ดูแล',
+		permission: 'admin',
+	},
+	{
+		key: 'folder',
+		href: '/library/folders',
+		icon: BookOpen,
+		iconBg: 'bg-purple-100',
+		iconColor: 'text-purple-700',
+		border: 'border-purple-200',
+		bg: 'bg-purple-50 hover:bg-purple-100',
+		title: 'โฟล์เดอร์ชั้นนอก',
+		titleEn: 'Main Folder Panel',
+		description: 'จัดการโฟลเดอร์หลัก',
+		permission: 'admin',
 	},
 ];
 
@@ -44,7 +72,7 @@ export default function Home() {
 	const { data: session } = useSession();
 	const isAdmin = session?.role === 'ADMIN';
 
-	const visibleCards = HUB_CARDS.filter((c) => c.key !== 'admin' || isAdmin);
+	const visibleCards = HUB_CARDS.filter((c) => c.permission !== 'admin' || isAdmin);
 
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
