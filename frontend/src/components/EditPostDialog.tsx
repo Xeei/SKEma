@@ -177,6 +177,7 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 							placeholder="Enter post title"
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
+							onKeyDown={(e) => e.stopPropagation()}
 							disabled={loading}
 							required
 						/>
@@ -189,6 +190,7 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 							placeholder="Short description (optional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
+							onKeyDown={(e) => e.stopPropagation()}
 							disabled={loading}
 						/>
 					</div>
@@ -212,6 +214,7 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 							placeholder="Enter post content"
 							value={content}
 							onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
+							onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => e.stopPropagation()}
 							disabled={loading}
 							rows={8}
 							required

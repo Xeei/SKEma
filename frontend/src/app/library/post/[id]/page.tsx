@@ -220,11 +220,23 @@ export default function PostDetailPage() {
 									<DropdownMenuContent align="end" className="w-48">
 										<DropdownMenuGroup>
 											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-												<SharePostDialog post={post} onUpdated={loadPost} isAuthor={session?.userId === post.authorId} asMenuItem />
+												<SharePostDialog
+													post={post}
+													onUpdated={loadPost}
+													isAuthor={session?.userId === post.authorId}
+													asMenuItem
+												/>
 											</DropdownMenuItem>
 											{session?.userId === post.authorId && (
 												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-													<EditPostDialog post={post} onPostUpdated={loadPost} asMenuItem />
+													<EditPostDialog
+														post={post}
+														onPostUpdated={() => {
+															loadPost();
+															loadFiles();
+														}}
+														asMenuItem
+													/>
 												</DropdownMenuItem>
 											)}
 											{(session?.userId === post.authorId || session?.role === 'ADMIN') && (

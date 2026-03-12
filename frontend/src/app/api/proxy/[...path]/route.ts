@@ -43,12 +43,13 @@ async function handler(req: NextRequest) {
 
 	try {
 		const response = await fetch(targetUrl.toString(), fetchOptions);
-		const data = await response.text();
+		const contentType = response.headers.get('Content-Type') || 'application/json';
+		const data = await response.arrayBuffer();
 
 		return new NextResponse(data, {
 			status: response.status,
 			headers: {
-				'Content-Type': response.headers.get('Content-Type') || 'application/json',
+				'Content-Type': contentType,
 			},
 		});
 	} catch (error) {
