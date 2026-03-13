@@ -33,5 +33,5 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 1. Clone the repository.
 2. Turn on Docker on your Machine then run `docker compose up db -d` to start a new database.
 3. Split into 2 Terminals.
-4. [First Terminal] cd frontend -> run `npm run dev`.
-5. [Second Terminal] cd backend -> run `npm run dev`.
+4. `First Terminal` `cd frontend` run `npm run dev`.
+5. `Second Terminal` `cd backend` run `npm run dev`.
