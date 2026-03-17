@@ -25,9 +25,10 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 
 # How to contribute
 1. Fork the repository.
-2. Branch out from main. (Example Branch Name: `feat/fix-ui`, `bug/can-not-upload-file`)
-3. Make a Pull Request using the repo format.
-4. I will only accept pull request that passes the build workflow test.
+2. In the forked repository branch out from main. (Example Branch Name: `feat/fix-ui`, `bug/can-not-upload-file`)
+3. Commit your changes in the forked repository
+4. Come back to this main repo and make a Pull Request using the repo format.
+5. I will only accept pull request that passes the build workflow test.
 
 # How to run
 1. Clone the repository.
