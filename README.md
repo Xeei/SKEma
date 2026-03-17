@@ -30,6 +30,8 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 4. Come back to this main repo and make a Pull Request using the repo format.
 5. I will only accept pull request that passes the build workflow test.
 
+** If you don't know what to contribute look at the issue tab.
+
 # How to run
 1. Clone the repository.
 2. Turn on Docker on your Machine then run `docker compose up db -d` to start a new database.
