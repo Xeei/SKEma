@@ -88,7 +88,8 @@ export default function Home() {
 						SKE <span className="text-[#FDB913]">Schema</span>
 					</h1>
 					<p className="font-sarabun text-white/80 text-lg mb-8 max-w-xl mx-auto">
-						แหล่งรวมเอกสาร โจทย์การบ้าน และแหล่งเรียนรู้ — จัดเรียงตามวิชาและปีการศึกษา
+						แหล่งรวมเอกสาร โจทย์การบ้าน และแหล่งเรียนรู้<br>
+						จัดเรียงตามวิชาและปีการศึกษา
 					</p>
 				</div>
 			</div>
