@@ -13,7 +13,7 @@ services:
             - ./postgres/data:/var/lib/postgresql/data
         env_file:
             - path: .env
-              required: true
+              required: false
         healthcheck:
             test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
             interval: 10s
@@ -35,13 +35,13 @@ services:
                 condition: service_healthy
         env_file:
             - path: .env
-              required: true
+              required: false
         volumes:
             - ./backend/uploads:/app/uploads
         command: >
             sh -c "
               echo '--- [Backend] Database check complete. Running Prisma migrations...';
-              npm run db:migrate && npm start && echo $DATABASE_URL
+              npm run db:migrate && npm start && echo $$DATABASE_URL
               
             "
 
@@ -54,7 +54,7 @@ services:
             - prisma-network
         env_file:
             - path: .env
-              required: true
+              required: false
         environment:
             PORT: 3000
         ports:

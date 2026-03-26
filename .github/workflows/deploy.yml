@@ -17,6 +17,65 @@ jobs:
         run: |
           git pull origin main
 
+      - name: Validate deploy secrets and generate .env
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          PORT: ${{ secrets.PORT }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          NEXT_PUBLIC_BACKEND_HOST: ${{ secrets.NEXT_PUBLIC_BACKEND_HOST }}
+          nodeEnv: ${{ secrets.NODE_ENV }}
+          corsOrigin: ${{ secrets.CORS_ORIGIN }}
+        run: |
+          required_keys=(
+            POSTGRES_USER
+            POSTGRES_PASSWORD
+            POSTGRES_DB
+            POSTGRES_HOST
+            POSTGRES_PORT
+            PORT
+            DATABASE_URL
+            BACKEND_URL
+            NEXT_PUBLIC_BACKEND_HOST
+          )
+
+          missing=0
+          for key in "${required_keys[@]}"; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: ${key}"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Required secrets are missing. Deployment stopped."
+            exit 1
+          fi
+
+          cat > .env <<EOF
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_HOST=${POSTGRES_HOST}
+          POSTGRES_PORT=${POSTGRES_PORT}
+          PORT=${PORT}
+          DATABASE_URL=${DATABASE_URL}
+          NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+          NEXTAUTH_URL=${NEXTAUTH_URL}
+          BACKEND_URL=${BACKEND_URL}
+          NEXT_PUBLIC_BACKEND_HOST=${NEXT_PUBLIC_BACKEND_HOST}
+          nodeEnv=${nodeEnv}
+          corsOrigin=${corsOrigin}
+          EOF
+
+          echo "Created runtime .env for Docker Compose."
+
       - name: Build and restart with Docker Compose
         run: |
           docker compose down
