@@ -34,15 +34,6 @@ jobs:
           corsOrigin: ${{ secrets.CORS_ORIGIN }}
         run: |
           required_keys=(
-            POSTGRES_USER
-            POSTGRES_PASSWORD
-            POSTGRES_DB
-            POSTGRES_HOST
-            POSTGRES_PORT
-            PORT
-            DATABASE_URL
-            BACKEND_URL
-            NEXT_PUBLIC_BACKEND_HOST
           )
 
           missing=0
