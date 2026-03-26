@@ -1,0 +1,26 @@
+name: Deploy on Push to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # ← your Raspberry Pi
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull latest code
+        run: |
+          git pull origin main
+
+      - name: Build and restart with Docker Compose
+        run: |
+          docker compose down
+          docker compose up --build -d
+
+      - name: Check running containers
+        run: docker compose ps
