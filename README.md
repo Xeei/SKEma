@@ -38,3 +38,23 @@ SKE-Schema is designed to facilitate peer-to-peer support by providing a central
 3. Split into 2 Terminals.
 4. `First Terminal` `cd frontend` run `npm run dev`.
 5. `Second Terminal` `cd backend` run `npm run dev`.
+
+## Deploy Workflow Secrets
+
+The self-hosted deploy workflow in `.github/workflows/deploy.yml` creates a runtime `.env` before running Docker Compose.
+
+Add these GitHub repository secrets:
+
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `PORT`
+- `DATABASE_URL`
+- `BACKEND_URL`
+- `NEXT_PUBLIC_BACKEND_HOST`
+- `NEXTAUTH_SECRET` (optional)
+- `NEXTAUTH_URL` (optional)
+- `NODE_ENV` (optional, written to `nodeEnv`)
+- `CORS_ORIGIN` (optional, written to `corsOrigin`)

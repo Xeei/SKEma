@@ -174,3 +174,5 @@ After setting up the database:
 3. Visit `http://localhost:3000` and log in with Google OAuth
 
 4. Try uploading a file in the Library page!
+
+5. Test Build Compose
