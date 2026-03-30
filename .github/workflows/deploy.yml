@@ -12,10 +12,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          clean: false
 
-      - name: Pull latest code
+      - name: Sync latest code (preserving postgres data dir)
         run: |
-          git pull origin main
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd --exclude=postgres/
 
       - name: Validate deploy secrets and generate .env
         env:
