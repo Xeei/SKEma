@@ -12,14 +12,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          clean: false
 
-      - name: Sync latest code (preserving postgres data dir)
+      - name: Pull latest code
         run: |
-          git fetch origin main
-          git reset --hard origin/main
-          git clean -fd --exclude=postgres/
+          git pull origin main
 
       - name: Validate deploy secrets and generate .env
         env:
@@ -73,9 +69,8 @@ jobs:
 
       - name: Build and restart with Docker Compose
         run: |
-          docker rm -f skeschema-backend skeschema-frontend skeschema-db skeschema-nginx 2>/dev/null || true
-          docker compose down --remove-orphans
-          docker compose up --build --force-recreate -d
+          docker compose down
+          docker compose up --build -d
 
       - name: Check running containers
         run: docker compose ps
