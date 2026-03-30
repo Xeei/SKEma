@@ -116,7 +116,7 @@ function TermsDialogCore({ open, onOpenChange, blocking = false }: TermsDialogPr
 
 /** Auto-shows on first visit (blocking until accepted). Place in root page. */
 export function TermsDialog() {
-	const [open, setOpen] = useState(() => !localStorage.getItem(STORAGE_KEY));
+	const [open, setOpen] = useState(() => typeof window !== 'undefined' ? !localStorage.getItem(STORAGE_KEY) : false);
 
 	return <TermsDialogCore open={open} onOpenChange={setOpen} blocking />;
 }
