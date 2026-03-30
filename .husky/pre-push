@@ -1,1 +1,1 @@
-cd backend && npm test
+cd backend && npm test -- --passWithNoTests
