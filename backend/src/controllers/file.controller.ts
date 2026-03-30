@@ -9,7 +9,6 @@ import {
 	getPublicFilesByFolder,
 } from '../models/file.model';
 import fs from 'fs';
-import path from 'path';
 
 // Allowed MIME types mapped from magic byte detection
 const ALLOWED_MIME_TYPES = new Set([
@@ -276,7 +275,7 @@ export const getFilesByFolder = async (
 	res: Response
 ): Promise<void> => {
 	try {
-		const userId = (req as any).user?.userId as string;
+		const userId = req.user?.id as string;
 		const folderId = req.params.id as string;
 		const search = (req.query.search as string) || '';
 		const files = await getPublicFilesByFolder(userId, folderId, search);

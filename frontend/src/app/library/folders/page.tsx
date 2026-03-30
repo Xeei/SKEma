@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
 import { Sarabun } from 'next/font/google';
 import {
 	FileFolderData,
@@ -55,6 +54,7 @@ export default function PublicFoldersPage() {
 
 	useEffect(() => {
 		loadFolders();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [page]);
 
 	const loadFolders = async () => {

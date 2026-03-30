@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import {
 	createUserController,
-	updateUserController,
-	deleteUserController,
 	getUserByIdController,
 	getUserByEmailController,
 	getAllUsersController,

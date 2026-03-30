@@ -8,5 +8,17 @@ export default tseslint.config(
 	tseslint.configs.recommended,
 	{
 		ignores: ['dist/*', 'jest.config.js'],
+	},
+	{
+		rules: {
+			'@typescript-eslint/no-unused-vars': [
+				'error',
+				{
+					argsIgnorePattern: '^_',
+					varsIgnorePattern: '^_',
+					caughtErrorsIgnorePattern: '^_',
+				},
+			],
+		},
 	}
 );

@@ -95,7 +95,7 @@ export default function PostDetailPage() {
 	const isPreviewable = (mimetype?: string) =>
 		!!mimetype && (mimetype.startsWith('image/') || mimetype === 'application/pdf');
 
-	const togglePreview = async (fileId: string, mimetype?: string) => {
+	const togglePreview = async (fileId: string) => {
 		if (previewUrls[fileId]) {
 			URL.revokeObjectURL(previewUrls[fileId]);
 			setPreviewUrls((prev) => {
@@ -184,7 +184,7 @@ export default function PostDetailPage() {
 					</div>
 					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>Post Not Found</h1>
 					<p className="text-muted-foreground mt-2">
-						The post you're looking for doesn't exist or you don't have permission to view it.
+						The post you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
 					</p>
 				</div>
 			</main>
@@ -411,7 +411,7 @@ export default function PostDetailPage() {
 														size="sm"
 														variant="outline"
 														className="gap-2"
-														onClick={() => togglePreview(file.fileId, file.mimetype)}
+														onClick={() => togglePreview(file.fileId)}
 														disabled={previewLoading[file.fileId]}
 													>
 														{previewLoading[file.fileId]
@@ -440,6 +440,7 @@ export default function PostDetailPage() {
 										{previewUrls[file.fileId] && (
 											<div className="border-t bg-gray-50 p-4">
 												{file.mimetype?.startsWith('image/') ? (
+													// eslint-disable-next-line @next/next/no-img-element
 													<img
 														src={previewUrls[file.fileId]}
 														alt={file.originalName || file.filename}

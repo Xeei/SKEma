@@ -220,7 +220,7 @@ export const updateFolder = async (
 ): Promise<FileFolderData | null> => {
 	const pool: Pool = await getDbConnection();
 	const updates: string[] = [];
-	const values: any[] = [];
+	const values: (string | number | boolean | null)[] = [];
 	let paramCount = 1;
 
 	if (name !== undefined) {
