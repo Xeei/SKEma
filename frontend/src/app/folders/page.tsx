@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sarabun } from 'next/font/google';
 import { getAllFolders, getFoldersByParent, FileFolderData } from '@/services/folder.service';
 import { BookOpen, FolderOpen, ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -78,13 +79,13 @@ export default function FoldersPage() {
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
 			{/* Hero Section */}
-			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-14 px-6">
+			<div className="bg-linear-to-br from-brand via-brand-dark to-brand-darker text-white py-14 px-6">
 				<div className="max-w-5xl mx-auto text-center">
 					<span className="inline-block bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-5 font-sarabun">
 						คณะวิชาวิศวกรรมซอฟต์แวร์และความรู้
 					</span>
 					<h1 className="font-sarabun text-5xl font-bold mb-3 tracking-tight">
-						SKE <span className="text-[#FDB913]">Schema</span>
+						SKE <span className="text-brand-accent">Schema</span>
 					</h1>
 					<p className="font-sarabun text-white/80 text-lg mb-8 max-w-xl mx-auto">
 						แหล่งรวมเอกสาร โจทย์การบ้าน และแหล่งเรียนรู้ — จัดเรียงตามวิชาและปีการศึกษา
@@ -95,9 +96,20 @@ export default function FoldersPage() {
 			{/* Content */}
 			<div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
 				{loading ? (
-					<div className="flex flex-col items-center justify-center py-24 gap-4">
-						<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
-						<p className="font-sarabun text-gray-500">กำลังโหลดข้อมูล...</p>
+					<div className="space-y-10">
+						{[...Array(2)].map((_, gi) => (
+							<section key={gi}>
+								<div className="flex items-center gap-3 mb-4">
+									<Skeleton className="w-1.5 h-7 rounded-full" />
+									<Skeleton className="h-6 w-40" />
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+									{[...Array(3)].map((_, i) => (
+										<Skeleton key={i} className="h-40 rounded-xl" />
+									))}
+								</div>
+							</section>
+						))}
 					</div>
 				) : error ? (
 					<div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
@@ -107,7 +119,7 @@ export default function FoldersPage() {
 						<p className="font-sarabun text-gray-600 text-lg">{error}</p>
 						<button
 							onClick={() => router.push('/auth/login')}
-							className="bg-[#006837] hover:bg-[#005028] text-white font-sarabun font-semibold px-6 py-2.5 rounded-lg transition-colors"
+							className="bg-brand hover:bg-brand-dark text-white font-sarabun font-semibold px-6 py-2.5 rounded-lg transition-colors"
 						>
 							เข้าสู่ระบบ
 						</button>
@@ -125,7 +137,7 @@ export default function FoldersPage() {
 								{/* Year Header */}
 								<div className="flex items-center justify-between mb-4">
 									<div className="flex items-center gap-3">
-										<div className="w-1.5 h-7 bg-[#006837] rounded-full" />
+										<div className="w-1.5 h-7 bg-brand rounded-full" />
 										<div>
 											<h2 className="font-sarabun text-xl font-bold text-gray-800">
 												{group.yearFolder.name}
@@ -165,7 +177,7 @@ export default function FoldersPage() {
 														className={`w-4 h-4 ${color.text} opacity-0 group-hover:opacity-100 transition-opacity mt-1`}
 													/>
 												</div>
-												<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-[#006837] transition-colors leading-snug">
+												<h3 className="font-sarabun font-semibold text-gray-800 group-hover:text-brand transition-colors leading-snug">
 													{subject.name}
 												</h3>
 												{subject.description && (

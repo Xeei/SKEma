@@ -38,6 +38,7 @@ import {
 	Trash2,
 } from 'lucide-react';
 import { CreatePostDialog } from '@/components/CreatePostDialog';
+import { EmptyState } from '@/components/EmptyState';
 import { CreateSubFolderDialog } from '@/components/CreateSubFolderDialog';
 import { EditFolderDialog } from '@/components/EditFolderDialog';
 import { Pagination } from '@/components/Pagination';
@@ -203,7 +204,7 @@ export default function FolderDetailPage() {
 	if (!folder && !loading) {
 		return (
 			<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
-				<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-12 px-6">
+				<div className="bg-linear-to-br from-brand via-brand-dark to-brand-darker text-white py-12 px-6">
 					<div className="max-w-5xl mx-auto">
 						<p className="font-sarabun text-white/60 text-sm mb-2">SKE Schema / คลังความรู้</p>
 						<h1 className="font-sarabun text-4xl font-bold">ไม่พบโฟลเดอร์</h1>
@@ -216,7 +217,7 @@ export default function FolderDetailPage() {
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)]`}>
 			{/* Hero */}
-			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-12 px-6">
+			<div className="bg-linear-to-br from-brand via-brand-dark to-brand-darker text-white py-12 px-6">
 				<div className="max-w-5xl mx-auto">
 					{/* Breadcrumb */}
 					<nav className="flex items-center gap-1.5 flex-wrap mb-5 text-sm">
@@ -301,7 +302,7 @@ export default function FolderDetailPage() {
 			<div className="max-w-5xl mx-auto py-8">
 				{loading ? (
 					<div className="flex flex-col items-center justify-center py-24 gap-4">
-						<div className="w-12 h-12 border-4 border-[#006837] border-t-transparent rounded-full animate-spin" />
+						<div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
 						<p className="font-sarabun text-gray-500">กำลังโหลดข้อมูล...</p>
 					</div>
 				) : (
@@ -315,11 +316,11 @@ export default function FolderDetailPage() {
 									placeholder="ค้นหาในโฟลเดอร์นี้... / Search here..."
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
-									className="w-full pl-9 pr-3 py-1.5 text-sm font-sarabun border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#006837]/20 focus:border-[#006837]"
+									className="w-full pl-9 pr-3 py-1.5 text-sm font-sarabun border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
 								/>
 							</div>
 							{searching ? (
-								<Loader2 className="w-3.5 h-3.5 text-[#006837] animate-spin shrink-0" />
+								<Loader2 className="w-3.5 h-3.5 text-brand animate-spin shrink-0" />
 							) : (
 								<span className="font-sarabun text-xs text-gray-400 shrink-0">
 									{subfolders.length + posts.length + files.length} รายการ
@@ -337,10 +338,15 @@ export default function FolderDetailPage() {
 						</div>
 
 						{!hasResults && (
-							<div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-								<FolderOpen className="w-12 h-12 text-gray-200" />
-								<p className="font-sarabun text-gray-400 text-sm">ไม่พบรายการที่ค้นหา</p>
-							</div>
+							<EmptyState
+								icon={FolderOpen}
+								title={debouncedSearch ? 'ไม่พบรายการที่ค้นหา' : 'โฟลเดอร์นี้ยังว่างเปล่า'}
+								description={
+									debouncedSearch
+										? 'ลองเปลี่ยนคำค้นหาใหม่'
+										: 'ยังไม่มีโพสต์หรือไฟล์ในโฟลเดอร์นี้'
+								}
+							/>
 						)}
 
 						{hasResults && (
@@ -351,13 +357,13 @@ export default function FolderDetailPage() {
 										<div
 											key={subfolder.id}
 											onClick={() => router.push(`/library/folders/${subfolder.id}`)}
-											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 cursor-pointer group gap-3 transition-colors"
+											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-brand/5 cursor-pointer group gap-3 transition-colors"
 										>
 											{/* Icon */}
 											<Folder className="w-5 h-5 text-amber-400 shrink-0 fill-amber-100" />
 											{/* Name */}
 											<div className="min-w-0 flex items-center gap-2">
-												<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-[#006837]">
+												<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-brand">
 													{subfolder.name}
 												</span>
 												{subfolder.description && (
@@ -384,7 +390,7 @@ export default function FolderDetailPage() {
 														<Trash2 className="w-3.5 h-3.5" />
 													</button>
 												)}
-												<ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#006837]" />
+												<ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-brand" />
 											</div>
 										</div>
 									))}
@@ -394,13 +400,13 @@ export default function FolderDetailPage() {
 									<div
 										key={post.id}
 										onClick={() => router.push(`/library/post/${post.id}`)}
-										className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 cursor-pointer group gap-3 transition-colors"
+										className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-brand/5 cursor-pointer group gap-3 transition-colors"
 									>
 										{/* Icon */}
-										<FileText className="w-5 h-5 text-[#006837] shrink-0" />
+										<FileText className="w-5 h-5 text-brand shrink-0" />
 										{/* Name */}
 										<div className="min-w-0 flex items-center gap-2">
-											<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-[#006837]">
+											<span className="font-sarabun font-medium text-gray-800 truncate text-sm group-hover:text-brand">
 												{post.title}
 											</span>
 											{post.description && (
@@ -451,7 +457,7 @@ export default function FolderDetailPage() {
 									files.map((file) => (
 										<div
 											key={file.id}
-											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-[#006837]/5 group gap-3 transition-colors"
+											className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center px-4 py-2 hover:bg-brand/5 group gap-3 transition-colors"
 										>
 											{/* Icon */}
 											<span className="w-5 h-5 text-center text-sm leading-none shrink-0 select-none">
@@ -480,7 +486,7 @@ export default function FolderDetailPage() {
 													{file.downloads}
 												</span>
 												<button
-													className="inline-flex items-center gap-1 px-2 py-1 text-xs font-sarabun font-medium text-white bg-[#006837] hover:bg-[#005530] rounded transition-colors opacity-0 group-hover:opacity-100"
+													className="inline-flex items-center gap-1 px-2 py-1 text-xs font-sarabun font-medium text-white bg-brand hover:bg-brand-dark rounded transition-colors opacity-0 group-hover:opacity-100"
 													onClick={() => handleDownload(file.id, file.originalName)}
 												>
 													<Download className="w-3 h-3" />

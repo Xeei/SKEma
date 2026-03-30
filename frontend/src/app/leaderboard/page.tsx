@@ -5,7 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Sarabun } from 'next/font/google';
 import { Trophy, ThumbsUp, Eye, FileText, Crown, Medal } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getLeaderboard, LeaderboardEntry } from '@/services/leaderboard.service';
+import Link from 'next/link';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -69,7 +71,7 @@ function Avatar({
 		size === 'lg' ? 'w-16 h-16 text-xl' : size === 'md' ? 'w-12 h-12 text-base' : 'w-9 h-9 text-sm';
 	return (
 		<div
-			className={`${sizeClass} rounded-full bg-[#006837] text-white flex items-center justify-center font-bold shrink-0`}
+			className={`${sizeClass} rounded-full bg-brand text-white flex items-center justify-center font-bold shrink-0`}
 		>
 			{getInitials(name, email)}
 		</div>
@@ -103,7 +105,7 @@ export default function LeaderboardPage() {
 	return (
 		<main className={`${sarabun.variable} min-h-[calc(100vh-180px)] bg-gray-50`}>
 			{/* Header */}
-			<div className="bg-linear-to-br from-[#006837] via-[#005028] to-[#003d1f] text-white py-12 px-6">
+			<div className="bg-linear-to-br from-brand via-brand-dark to-brand-darker text-white py-12 px-6">
 				<div className="max-w-4xl mx-auto text-center">
 					<div className="flex items-center justify-center gap-2 mb-3">
 						<Trophy className="w-8 h-8 text-yellow-400" />
@@ -117,7 +119,21 @@ export default function LeaderboardPage() {
 
 			<div className="max-w-4xl mx-auto px-6 py-12">
 				{loading && (
-					<div className="text-center text-gray-500 font-sarabun py-24 text-lg">กำลังโหลด...</div>
+					<div className="space-y-8">
+						<div className="flex items-end justify-center gap-4">
+							{[{ h: 'h-24', a: 'w-12 h-12' }, { h: 'h-36', a: 'w-16 h-16' }, { h: 'h-20', a: 'w-12 h-12' }].map((s, i) => (
+								<div key={i} className="flex flex-col items-center gap-2">
+									<Skeleton className={`${s.a} rounded-full`} />
+									<Skeleton className={`${s.h} w-28 rounded-t-xl`} />
+								</div>
+							))}
+						</div>
+						<div className="flex flex-col gap-3">
+							{[...Array(5)].map((_, i) => (
+								<Skeleton key={i} className="h-16 rounded-xl" />
+							))}
+						</div>
+					</div>
 				)}
 
 				{error && (
@@ -138,14 +154,15 @@ export default function LeaderboardPage() {
 						</h2>
 						{/* Reorder: 2nd, 1st, 3rd */}
 						<div className="flex items-end justify-center gap-4">
-							{[podium[1], podium[0], podium[2]].filter(Boolean).map((entry, idx) => {
+							{[podium[1], podium[0], podium[2]].filter(Boolean).map((entry) => {
 								const realRank = entry.rank === 1 ? 0 : entry.rank === 2 ? 1 : 2;
 								const config = PODIUM_COLORS[realRank];
 								const Icon = config.icon;
 								return (
-									<div
+									<Link
 										key={entry.userId}
-										className={`flex flex-col items-center ${entry.rank === 1 ? 'order-2' : entry.rank === 2 ? 'order-1' : 'order-3'}`}
+										href={`/profile/${entry.userId}`}
+										className={`flex flex-col items-center hover:opacity-80 transition-opacity ${entry.rank === 1 ? 'order-2' : entry.rank === 2 ? 'order-1' : 'order-3'}`}
 									>
 										<Icon className={`w-7 h-7 mb-2 ${config.iconColor}`} />
 										<Avatar
@@ -154,14 +171,20 @@ export default function LeaderboardPage() {
 											size={entry.rank === 1 ? 'lg' : 'md'}
 										/>
 										<p
-											className={`font-sarabun font-bold mt-2 text-gray-800 ${entry.rank === 1 ? 'text-base' : 'text-sm'} max-w-[110px] text-center truncate`}
+											className={`font-sarabun font-bold mt-2 text-gray-800 ${entry.rank === 1 ? 'text-base' : 'text-sm'} max-w-27.5 text-center truncate`}
 										>
 											{entry.name || entry.email.split('@')[0]}
 										</p>
-										<p className="font-sarabun text-xs text-gray-400 mb-3">
-											{entry.totalUpvotes.toLocaleString()} upvote
-											{entry.totalUpvotes !== 1 ? 's' : ''}
-										</p>
+										<div className="flex items-center gap-2 mb-3">
+											<span className="font-sarabun text-xs text-emerald-600 flex items-center gap-0.5">
+												<ThumbsUp className="w-3 h-3" />
+												{entry.totalUpvotes.toLocaleString()}
+											</span>
+											<span className="font-sarabun text-xs text-blue-500 flex items-center gap-0.5">
+												<Eye className="w-3 h-3" />
+												{entry.totalViews.toLocaleString()}
+											</span>
+										</div>
 										<div
 											className={`w-28 ${config.height} ${config.bg} border-t-4 ${config.border} rounded-t-xl flex items-center justify-center`}
 										>
@@ -169,7 +192,7 @@ export default function LeaderboardPage() {
 												#{entry.rank}
 											</span>
 										</div>
-									</div>
+									</Link>
 								);
 							})}
 						</div>
@@ -184,9 +207,10 @@ export default function LeaderboardPage() {
 						</h2>
 						<div className="flex flex-col gap-3">
 							{rest.map((entry) => (
-								<div
+								<Link
 									key={entry.userId}
-									className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm"
+									href={`/profile/${entry.userId}`}
+									className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm hover:border-brand hover:shadow-md transition-all"
 								>
 									<span className="font-sarabun text-lg font-bold text-gray-400 w-8 text-center shrink-0">
 										#{entry.rank}
@@ -218,7 +242,7 @@ export default function LeaderboardPage() {
 											</span>
 										</div>
 									</div>
-								</div>
+								</Link>
 							))}
 						</div>
 					</div>

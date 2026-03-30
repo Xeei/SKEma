@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -25,7 +24,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createPost, addFileToPost } from '@/services/post.service';
 import { uploadFile } from '@/services/file.service';
-import { Plus, X, FileIcon, Clock } from 'lucide-react';
+import { Plus, X, FileIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CreatePostDialogProps {
 	onPostCreated?: () => void;
@@ -38,21 +38,51 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 	const isStandard = !userRole || userRole === 'STANDARD';
 
 	const [open, setOpen] = useState(false);
+	const [step, setStep] = useState<1 | 2>(1);
 	const [showWarning, setShowWarning] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [title, setTitle] = useState('');
+	const [titleError, setTitleError] = useState('');
 	const [description, setDescription] = useState('');
 	const [link, setLink] = useState('');
 	const [content, setContent] = useState('');
+	const [contentError, setContentError] = useState('');
 	const [isAnonymous, setIsAnonymous] = useState(false);
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!title.trim() || !content.trim()) {
-			alert('Title and content are required');
+	const resetForm = () => {
+		setStep(1);
+		setTitle('');
+		setTitleError('');
+		setDescription('');
+		setLink('');
+		setContent('');
+		setContentError('');
+		setIsAnonymous(false);
+		setSelectedFiles([]);
+	};
+
+	const handleOpenChange = (value: boolean) => {
+		setOpen(value);
+		if (!value) resetForm();
+	};
+
+	const handleNextStep = () => {
+		setTitleError('');
+		setContentError('');
+		if (!title.trim()) {
+			setTitleError('กรุณากรอกชื่อโพสต์');
 			return;
 		}
+		if (!content.trim()) {
+			setContentError('กรุณากรอกเนื้อหา');
+			return;
+		}
+		setStep(2);
+	};
+
+	const handleSubmit = (e: React.SyntheticEvent) => {
+		e.preventDefault();
 		setShowWarning(true);
 	};
 
@@ -77,23 +107,20 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 				}
 			}
 
-			setTitle('');
-			setDescription('');
-			setLink('');
-			setContent('');
-			setIsAnonymous(false);
-			setSelectedFiles([]);
+			resetForm();
 			setOpen(false);
 
 			if (post.status === 'PENDING') {
-				alert('Your post has been submitted and is awaiting approval by an admin.');
+				toast.info('โพสต์ถูกส่งเพื่อรออนุมัติจากแอดมิน', {
+					description: 'Your post is pending review.',
+				});
 			} else {
-				alert('Post created successfully!');
+				toast.success('สร้างโพสต์สำเร็จ!', { description: 'Your post is now live.' });
 			}
 			onPostCreated?.();
 		} catch (error) {
 			console.error('Error creating post:', error);
-			alert('Failed to create post');
+			toast.error('ไม่สามารถสร้างโพสต์ได้ กรุณาลองใหม่');
 		} finally {
 			setLoading(false);
 		}
@@ -107,7 +134,6 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 				const unique = incoming.filter((f) => !existingNames.has(f.name));
 				return [...prev, ...unique];
 			});
-			// Reset input so the same file can be re-added after removal
 			e.target.value = '';
 		}
 	};
@@ -147,18 +173,18 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel / ยกเลิก</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-[#006837] hover:bg-[#005530]"
+							className="bg-brand hover:bg-brand-dark"
 							onClick={handleConfirmedSubmit}
 						>
-							{isStandard ? 'Post / โพส' : 'Post / โพส'}
+							Post / โพส
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog open={open} onOpenChange={handleOpenChange}>
 				<DialogTrigger asChild>
-					<Button className="bg-[#006837] hover:bg-[#005530] gap-2">
+					<Button className="bg-brand hover:bg-brand-dark gap-2">
 						<Plus className="w-4 h-4" />
 						Create Post
 					</Button>
@@ -166,149 +192,194 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 				<DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Create New Post</DialogTitle>
-						<DialogDescription>
-							Write your post using Markdown — supports headings, code blocks, lists, and more.
-						</DialogDescription>
 					</DialogHeader>
 
-					{/* {isStandard && (
-						<div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-							<Clock className="mt-0.5 h-4 w-4 shrink-0" />
-							<span>
-								<strong>Pending approval:</strong> As a standard user, your post will be reviewed by
-								an admin before it appears publicly.
-							</span>
+					{/* Step progress bar */}
+					<div className="space-y-1.5 mb-2">
+						<div className="flex gap-2">
+							{([1, 2] as const).map((n) => (
+								<div
+									key={n}
+									className={`h-1.5 flex-1 rounded-full transition-colors ${step >= n ? 'bg-brand' : 'bg-gray-200'}`}
+								/>
+							))}
 						</div>
-					)} */}
+						<p className="text-xs text-muted-foreground text-center">
+							ขั้นตอนที่ {step} จาก 2 —{' '}
+							{step === 1 ? 'รายละเอียดโพสต์' : 'ไฟล์แนบและยืนยัน'}
+						</p>
+					</div>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
-						<div>
-							<label className="text-sm font-medium">
-								Title <span className="text-red-500">*</span>
-							</label>
-							<Input
-								type="text"
-								placeholder="Enter post title"
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
-								disabled={loading}
-								required
-							/>
-						</div>
+						{/* ── Step 1 ── */}
+						{step === 1 && (
+							<>
+								<div>
+									<label className="text-sm font-medium">
+										Title <span className="text-red-500">*</span>
+									</label>
+									<Input
+										type="text"
+										placeholder="Enter post title"
+										value={title}
+										onChange={(e) => setTitle(e.target.value)}
+										disabled={loading}
+									/>
+									{titleError && (
+										<p className="text-xs text-red-500 mt-1">{titleError}</p>
+									)}
+								</div>
 
-						<div>
-							<label className="text-sm font-medium">Description</label>
-							<Input
-								type="text"
-								placeholder="Short description (optional)"
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								disabled={loading}
-							/>
-						</div>
+								<div>
+									<label className="text-sm font-medium">Description</label>
+									<Input
+										type="text"
+										placeholder="Short description (optional)"
+										value={description}
+										onChange={(e) => setDescription(e.target.value)}
+										disabled={loading}
+									/>
+								</div>
 
-						<div>
-							<label className="text-sm font-medium">Link</label>
-							<Input
-								type="url"
-								placeholder="https://example.com (optional)"
-								value={link}
-								onChange={(e) => setLink(e.target.value)}
-								disabled={loading}
-							/>
-						</div>
+								<div>
+									<label className="text-sm font-medium">Link</label>
+									<Input
+										type="url"
+										placeholder="https://example.com (optional)"
+										value={link}
+										onChange={(e) => setLink(e.target.value)}
+										disabled={loading}
+									/>
+								</div>
 
-						<div>
-							<label className="text-sm font-medium">
-								Content <span className="text-red-500">*</span>
-							</label>
-							<textarea
-								placeholder="Write your post content here..."
-								value={content}
-								onChange={(e) => setContent(e.target.value)}
-								disabled={loading}
-								required
-								rows={8}
-								className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006837]"
-							/>
-						</div>
+								<div>
+									<label className="text-sm font-medium">
+										Content <span className="text-red-500">*</span>
+									</label>
+									<textarea
+										placeholder="Write your post content here..."
+										value={content}
+										onChange={(e) => setContent(e.target.value)}
+										disabled={loading}
+										rows={8}
+										className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+									/>
+									{contentError && (
+										<p className="text-xs text-red-500 mt-1">{contentError}</p>
+									)}
+								</div>
 
-						<div className="flex items-center gap-2">
-							<input
-								type="checkbox"
-								id="isAnonymous"
-								checked={isAnonymous}
-								onChange={(e) => setIsAnonymous(e.target.checked)}
-								disabled={loading}
-								className="w-4 h-4 accent-[#006837] cursor-pointer"
-							/>
-							<label
-								htmlFor="isAnonymous"
-								className="text-sm font-medium cursor-pointer select-none"
-							>
-								Post anonymously{' '}
-								<span className="text-muted-foreground font-normal">
-									(your name will not be shown)
-								</span>
-							</label>
-						</div>
+								<div className="flex items-center gap-2">
+									<input
+										type="checkbox"
+										id="isAnonymous"
+										checked={isAnonymous}
+										onChange={(e) => setIsAnonymous(e.target.checked)}
+										disabled={loading}
+										className="w-4 h-4 accent-brand cursor-pointer"
+									/>
+									<label
+										htmlFor="isAnonymous"
+										className="text-sm font-medium cursor-pointer select-none"
+									>
+										Post anonymously{' '}
+										<span className="text-muted-foreground font-normal">
+											(your name will not be shown)
+										</span>
+									</label>
+								</div>
 
-						<div>
-							<label className="text-sm font-medium">Attach Files</label>
-							<label className="mt-1 flex items-center gap-2 w-fit cursor-pointer">
-								<span className="border rounded px-3 py-1.5 text-sm bg-muted hover:bg-accent transition-colors flex items-center gap-2">
-									<Plus className="w-4 h-4" />
-									Add Files
-								</span>
-								<input
-									type="file"
-									multiple
-									onChange={handleFileChange}
-									disabled={loading}
-									className="hidden"
-								/>
-							</label>
-							{selectedFiles.length > 0 && (
-								<ul className="mt-2 space-y-1">
-									{selectedFiles.map((file, i) => (
-										<li
-											key={i}
-											className="flex items-center justify-between gap-2 border rounded px-3 py-1.5 text-sm bg-muted/50"
-										>
-											<div className="flex items-center gap-2 min-w-0">
-												<FileIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
-												<span className="truncate">{file.name}</span>
-												<span className="text-xs text-muted-foreground shrink-0">
-													({(file.size / 1024).toFixed(1)} KB)
-												</span>
-											</div>
-											<button
-												type="button"
-												onClick={() => removeSelectedFile(i)}
-												disabled={loading}
-												className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
-											>
-												<X className="w-4 h-4" />
-											</button>
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
+								<DialogFooter>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => setOpen(false)}
+										disabled={loading}
+									>
+										Cancel
+									</Button>
+									<Button
+										type="button"
+										className="bg-brand hover:bg-brand-dark"
+										onClick={handleNextStep}
+									>
+										ถัดไป →
+									</Button>
+								</DialogFooter>
+							</>
+						)}
 
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setOpen(false)}
-								disabled={loading}
-							>
-								Cancel
-							</Button>
-							<Button type="submit" className="bg-[#006837] hover:bg-[#005530]" disabled={loading}>
-								{loading ? 'Submitting...' : isStandard ? 'Create Post' : 'Create Post'}
-							</Button>
-						</DialogFooter>
+						{/* ── Step 2 ── */}
+						{step === 2 && (
+							<>
+								{/* Summary chip */}
+								<div className="flex items-center gap-2 bg-brand/5 border border-brand/20 rounded-lg px-3 py-2">
+									<span className="text-xs text-muted-foreground">โพสต์:</span>
+									<span className="text-sm font-medium text-brand truncate">{title}</span>
+								</div>
+
+								<div>
+									<label className="text-sm font-medium">Attach Files</label>
+									<label className="mt-1 flex items-center gap-2 w-fit cursor-pointer">
+										<span className="border rounded px-3 py-1.5 text-sm bg-muted hover:bg-accent transition-colors flex items-center gap-2">
+											<Plus className="w-4 h-4" />
+											Add Files
+										</span>
+										<input
+											type="file"
+											multiple
+											onChange={handleFileChange}
+											disabled={loading}
+											className="hidden"
+										/>
+									</label>
+									{selectedFiles.length > 0 && (
+										<ul className="mt-2 space-y-1">
+											{selectedFiles.map((file, i) => (
+												<li
+													key={i}
+													className="flex items-center justify-between gap-2 border rounded px-3 py-1.5 text-sm bg-muted/50"
+												>
+													<div className="flex items-center gap-2 min-w-0">
+														<FileIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+														<span className="truncate">{file.name}</span>
+														<span className="text-xs text-muted-foreground shrink-0">
+															({(file.size / 1024).toFixed(1)} KB)
+														</span>
+													</div>
+													<button
+														type="button"
+														onClick={() => removeSelectedFile(i)}
+														disabled={loading}
+														className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+													>
+														<X className="w-4 h-4" />
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+
+								<DialogFooter>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => setStep(1)}
+										disabled={loading}
+									>
+										← ย้อนกลับ
+									</Button>
+									<Button
+										type="submit"
+										className="bg-brand hover:bg-brand-dark"
+										disabled={loading}
+									>
+										{loading ? 'Submitting...' : isStandard ? 'Create Post' : 'Create Post'}
+									</Button>
+								</DialogFooter>
+							</>
+						)}
 					</form>
 				</DialogContent>
 			</Dialog>
