@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit, Plus, X, FileIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
 	updatePost,
 	PostData,
@@ -99,10 +100,10 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 		setNewFiles((prev) => prev.filter((_, i) => i !== index));
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		if (!title.trim() || !content.trim()) {
-			alert('Title and content are required');
+			toast.error('กรุณากรอกชื่อโพสต์และเนื้อหา');
 			return;
 		}
 
@@ -137,11 +138,11 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 			}
 
 			setOpen(false);
-			alert('Post updated successfully!');
+			toast.success('แก้ไขโพสต์สำเร็จ!');
 			onPostUpdated?.();
 		} catch (error) {
 			console.error('Error updating post:', error);
-			alert('Failed to update post');
+			toast.error('ไม่สามารถแก้ไขโพสต์ได้ กรุณาลองใหม่');
 		} finally {
 			setLoading(false);
 		}
@@ -364,7 +365,7 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 						>
 							Cancel
 						</Button>
-						<Button type="submit" className="bg-[#006837] hover:bg-[#005530]" disabled={loading}>
+						<Button type="submit" className="bg-brand hover:bg-brand-dark" disabled={loading}>
 							{loading ? 'Updating...' : 'Update Post'}
 						</Button>
 					</DialogFooter>

@@ -28,6 +28,8 @@ import {
 } from '@/services/post.service';
 import { downloadFile, formatFileSize, getFileIcon } from '@/services/file.service';
 import { Pagination } from '@/components/Pagination';
+import { EmptyState } from '@/components/EmptyState';
+import { toast } from 'sonner';
 
 const sarabun = Sarabun({
 	weight: ['400', '500', '600', '700'],
@@ -80,9 +82,10 @@ export default function AdminPendingPostsPage() {
 		try {
 			await approvePost(postId);
 			await loadPendingPosts();
+			toast.success('อนุมัติโพสต์แล้ว');
 		} catch (error) {
 			console.error('Error approving post:', error);
-			alert('Failed to approve post');
+			toast.error('ไม่สามารถอนุมัติโพสต์ได้');
 		} finally {
 			setActionLoading(null);
 		}
@@ -94,9 +97,10 @@ export default function AdminPendingPostsPage() {
 		try {
 			await rejectPost(postId);
 			await loadPendingPosts();
+			toast.success('ปฏิเสธโพสต์แล้ว');
 		} catch (error) {
 			console.error('Error rejecting post:', error);
-			alert('Failed to reject post');
+			toast.error('ไม่สามารถปฏิเสธโพสต์ได้');
 		} finally {
 			setActionLoading(null);
 		}
@@ -124,7 +128,7 @@ export default function AdminPendingPostsPage() {
 			await downloadFile(fileId, filename);
 		} catch (error) {
 			console.error('Error downloading file:', error);
-			alert('Failed to download file');
+			toast.error('ดาวน์โหลดล้มเหลว');
 		} finally {
 			setDownloadingFile(null);
 		}
@@ -134,7 +138,7 @@ export default function AdminPendingPostsPage() {
 		return (
 			<div className="min-h-[calc(100vh-180px)] flex items-center justify-center">
 				<div className="text-center">
-					<div className="w-16 h-16 border-4 border-[#006837] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+					<div className="w-16 h-16 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
 					<p className="text-muted-foreground">Loading...</p>
 				</div>
 			</div>
@@ -148,7 +152,7 @@ export default function AdminPendingPostsPage() {
 			<div className="max-w-5xl mx-auto space-y-6">
 				{/* Header */}
 				<div>
-					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
+					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>
 						Pending Post Approvals
 					</h1>
 					<p className="text-muted-foreground mt-1">
@@ -173,15 +177,11 @@ export default function AdminPendingPostsPage() {
 						))}
 					</div>
 				) : !data || data.data.length === 0 ? (
-					<Card>
-						<CardContent className="flex flex-col items-center justify-center py-16 text-center">
-							<CheckCircle className="h-12 w-12 text-[#006837] mb-4" />
-							<p className="text-lg font-medium">All caught up!</p>
-							<p className="text-muted-foreground text-sm mt-1">
-								There are no posts waiting for approval.
-							</p>
-						</CardContent>
-					</Card>
+					<EmptyState
+						icon={CheckCircle}
+						title="All caught up!"
+						description="There are no posts waiting for approval."
+					/>
 				) : (
 					<div className="space-y-4">
 						{data.data.map((post) => (
@@ -218,7 +218,7 @@ export default function AdminPendingPostsPage() {
 										<div className="flex gap-2 shrink-0">
 											<Button
 												size="sm"
-												className="bg-[#006837] hover:bg-[#005530] gap-1.5"
+												className="bg-brand hover:bg-brand-dark gap-1.5"
 												onClick={() => handleApprove(post.id)}
 												disabled={actionLoading !== null}
 											>
@@ -266,7 +266,7 @@ export default function AdminPendingPostsPage() {
 									{post.fileCount != null && post.fileCount > 0 && (
 										<div className="mt-3 border-t pt-3">
 											<button
-												className="flex items-center gap-1.5 text-sm font-medium text-[#006837] hover:underline"
+												className="flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
 												onClick={() => handleToggleFiles(post.id)}
 											>
 												<FileText className="h-4 w-4" />

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { votePost, getMyVote, VoteType } from '@/services/post.service';
-import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface VoteButtonsProps {
 	postId: string;
@@ -43,8 +43,14 @@ export function VoteButtons({
 			setUpvotes(result.upvotes);
 			setDownvotes(result.downvotes);
 			setMyVote(result.voteType);
+			if (type === 'UPVOTE') {
+				toast.success(result.voteType === 'UPVOTE' ? 'อัปโหวตแล้ว!' : 'ยกเลิกอัปโหวต');
+			} else {
+				toast.success(result.voteType === 'DOWNVOTE' ? 'ดาวน์โหวตแล้ว!' : 'ยกเลิกดาวน์โหวต');
+			}
 		} catch (err) {
 			console.error('Vote error:', err);
+			toast.error('เกิดข้อผิดพลาด กรุณาลองใหม่');
 		} finally {
 			setLoading(false);
 		}
@@ -59,7 +65,7 @@ export function VoteButtons({
 				onClick={() => handleVote('UPVOTE')}
 				disabled={!enabled || loading}
 				className={`flex items-center gap-1.5 transition-colors ${
-					myVote === 'UPVOTE' ? 'text-[#006837]' : 'hover:text-[#006837]'
+					myVote === 'UPVOTE' ? 'text-brand' : 'hover:text-brand'
 				}`}
 				aria-label="Upvote"
 				aria-pressed={myVote === 'UPVOTE'}

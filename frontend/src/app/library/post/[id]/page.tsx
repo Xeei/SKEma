@@ -26,6 +26,8 @@ import {
 	MoreHorizontalIcon,
 } from 'lucide-react';
 import { EditPostDialog } from '@/components/EditPostDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { SharePostDialog } from '@/components/SharePostDialog';
 import { ReportPostDialog } from '@/components/ReportPostDialog';
 import { VoteButtons } from '@/components/VoteButtons';
@@ -36,12 +38,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -126,7 +123,7 @@ export default function PostDetailPage() {
 			await downloadFile(fileId, filename);
 		} catch (error) {
 			console.error('Error downloading file:', error);
-			alert('Failed to download file');
+			toast.error('ดาวน์โหลดล้มเหลว');
 		}
 	};
 
@@ -135,11 +132,11 @@ export default function PostDetailPage() {
 		setDeleting(true);
 		try {
 			await deletePost(postId);
-			alert('Post deleted successfully!');
+			toast.success('ลบโพสต์สำเร็จ');
 			router.push('/library/folders');
 		} catch (error) {
 			console.error('Error deleting post:', error);
-			alert('Failed to delete post');
+			toast.error('ไม่สามารถลบโพสต์ได้');
 		} finally {
 			setDeleting(false);
 		}
@@ -161,10 +158,11 @@ export default function PostDetailPage() {
 	if (loading) {
 		return (
 			<main className="min-h-[calc(100vh-180px)] p-6 bg-linear-to-br from-emerald-50 to-amber-50">
-				<div className="max-w-4xl mx-auto">
-					<div className="flex items-center justify-center py-12">
-						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
-					</div>
+				<div className="max-w-4xl mx-auto space-y-5">
+					<Skeleton className="h-8 w-24" />
+					<Skeleton className="h-52 rounded-2xl" />
+					<Skeleton className="h-64 rounded-2xl" />
+					<Skeleton className="h-12 w-48 rounded-xl" />
 				</div>
 			</main>
 		);
@@ -184,9 +182,7 @@ export default function PostDetailPage() {
 							Back
 						</Button>
 					</div>
-					<h1 className={`${sarabun.className} text-3xl font-bold text-[#006837]`}>
-						Post Not Found
-					</h1>
+					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>Post Not Found</h1>
 					<p className="text-muted-foreground mt-2">
 						The post you're looking for doesn't exist or you don't have permission to view it.
 					</p>
@@ -203,7 +199,7 @@ export default function PostDetailPage() {
 					<Button
 						variant="ghost"
 						onClick={() => router.back()}
-						className="flex items-center gap-2 text-[#006837] hover:text-[#005530]"
+						className="flex items-center gap-2 text-brand hover:text-brand-dark"
 					>
 						<ArrowLeft className="w-4 h-4" />
 						Back
@@ -272,35 +268,30 @@ export default function PostDetailPage() {
 					)}
 				</div>
 
-				{/* Main Post Card */}
+				{/* ZONE 1: Title + Metadata */}
 				<Card>
 					<CardHeader>
-						<div className="flex items-start justify-between">
-							<div className="flex-1">
-								<CardTitle className={`${sarabun.className} text-3xl text-[#006837]`}>
-									{post.title}
-								</CardTitle>
-								{post.description && (
-									<CardDescription className="text-base mt-2">{post.description}</CardDescription>
-								)}
-								{post.link && (
-									<div className="mt-3">
-										<a
-											href={post.link}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="text-blue-600 hover:text-blue-800 underline text-sm flex items-center gap-1"
-										>
-											🔗 {post.link}
-										</a>
-									</div>
-								)}
+						<CardTitle className={`${sarabun.className} text-3xl text-brand`}>
+							{post.title}
+						</CardTitle>
+						{post.description && (
+							<CardDescription className="text-base mt-2">{post.description}</CardDescription>
+						)}
+						{post.link && (
+							<div className="mt-3">
+								<a
+									href={post.link}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-blue-600 hover:text-blue-800 underline text-sm flex items-center gap-1"
+								>
+									🔗 {post.link}
+								</a>
 							</div>
-						</div>
+						)}
 
 						{/* Metadata */}
 						<div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-muted-foreground">
-							{/* Author avatar */}
 							{(() => {
 								const isAnon = post.isAnonymous;
 								const displayName = isAnon
@@ -317,7 +308,7 @@ export default function PostDetailPage() {
 								const isOwn = session?.userId === post.authorId;
 								const avatar = (
 									<div className="flex items-center gap-2">
-										<div className="w-7 h-7 rounded-full bg-[#006837]/15 flex items-center justify-center text-[10px] font-bold text-[#006837] shrink-0">
+										<div className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center text-[10px] font-bold text-brand shrink-0">
 											{initials}
 										</div>
 										<span
@@ -329,8 +320,11 @@ export default function PostDetailPage() {
 										</span>
 									</div>
 								);
-								return isOwn && !isAnon ? (
-									<Link href="/profile" className="hover:text-[#006837] transition-colors">
+								return !isAnon ? (
+									<Link
+										href={`/profile/${post.authorId}`}
+										className="hover:text-brand transition-colors"
+									>
 										{avatar}
 									</Link>
 								) : (
@@ -350,20 +344,10 @@ export default function PostDetailPage() {
 								<span className="capitalize">{post.privacy.toLowerCase()}</span>
 							</div>
 							{post.category && (
-								<span className="bg-[#006837] text-white px-3 py-1 rounded-full text-xs">
+								<span className="bg-brand text-white px-3 py-1 rounded-full text-xs">
 									{post.category}
 								</span>
 							)}
-						</div>
-
-						{/* Vote Buttons */}
-						<div className="mt-4">
-							<VoteButtons
-								postId={post.id}
-								initialUpvotes={post.upvotes ?? 0}
-								initialDownvotes={post.downvotes ?? 0}
-								enabled={!!session}
-							/>
 						</div>
 
 						{/* Tags */}
@@ -377,21 +361,25 @@ export default function PostDetailPage() {
 							</div>
 						)}
 					</CardHeader>
-
-					<CardContent>
-						{/* Post Content */}
-						<div className="prose max-w-none">
+					<CardContent className="pt-6">
+						<div className="prose max-w-none bg-gray-50/60 rounded-xl p-4">
 							<div className="whitespace-pre-wrap text-base leading-relaxed">{post.content}</div>
 						</div>
-					</CardContent>
-
-					{/* Additional Info */}
-					<CardContent className="pt-6">
-						<p className="text-xs text-muted-foreground text-right">
+						<p className="text-xs text-muted-foreground text-right mt-4">
 							Last updated: {new Date(post.updatedAt).toLocaleString()}
 						</p>
 					</CardContent>
 				</Card>
+
+				{/* ZONE 3: Actions bar */}
+				<div className="flex items-center gap-4 px-1">
+					<VoteButtons
+						postId={post.id}
+						initialUpvotes={post.upvotes ?? 0}
+						initialDownvotes={post.downvotes ?? 0}
+						enabled={!!session}
+					/>
+				</div>
 
 				{/* Attached Files */}
 				{files.length > 0 && (
@@ -436,7 +424,7 @@ export default function PostDetailPage() {
 												<Button
 													size="sm"
 													variant="outline"
-													className="gap-2 bg-[#006837] text-white hover:bg-[#005530] hover:text-white"
+													className="gap-2 bg-brand text-white hover:bg-brand-dark hover:text-white"
 													onClick={() =>
 														handleDownload(
 															file.fileId,

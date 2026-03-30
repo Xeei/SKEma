@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Sarabun } from 'next/font/google';
 
 const sarabun = Sarabun({
@@ -23,28 +23,31 @@ function SignInContent() {
 	};
 
 	return (
-		<main className="flex min-h-[calc(100vh-180px)] items-center justify-center px-6 py-12">
-			<div className="w-full max-w-md">
-				<Card className="border-t-4 border-t-[#006837]">
-					<CardHeader className="space-y-4 text-center">
-						<div className="w-20 h-20 bg-[#006837] rounded-full flex items-center justify-center mx-auto">
-							<span className="text-white font-bold text-3xl">SKE</span>
-						</div>
-						<div className="space-y-2">
-							<CardTitle className={`${sarabun.className} text-3xl text-[#006837]`}>
-								เข้าสู่ระบบ
-							</CardTitle>
-							<CardDescription className="text-base">
-								Sign in to SKE Schema with your Google account
-							</CardDescription>
-						</div>
-					</CardHeader>
-					<CardContent className="space-y-4">
+		<main className="flex min-h-[calc(100vh-180px)] items-center justify-center px-6 py-12 bg-gray-50">
+			<div className="w-full max-w-sm space-y-6">
+				{/* Brand header */}
+				<div className="text-center space-y-3">
+					<div className="w-20 h-20 bg-brand rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+						<span className="text-white font-bold text-3xl font-sarabun">SKE</span>
+					</div>
+					<h1 className={`${sarabun.className} text-4xl font-bold text-gray-900`}>
+						SKE <span className="text-brand">Schema</span>
+					</h1>
+					<p className={`${sarabun.className} text-gray-500 text-sm leading-relaxed`}>
+						แหล่งรวมเอกสาร โจทย์การบ้าน และแหล่งเรียนรู้
+						<br />
+						สำหรับนักศึกษาวิศวกรรมซอฟต์แวร์และความรู้
+					</p>
+				</div>
+
+				{/* Auth card */}
+				<Card className="shadow-lg border-0">
+					<CardContent className="pt-6 pb-6 space-y-4">
 						<Button
 							onClick={handleGoogleSignIn}
 							variant="outline"
 							size="lg"
-							className="w-full text-base font-semibold"
+							className="w-full text-base font-semibold shadow-sm hover:shadow-md transition-shadow h-12"
 						>
 							<svg className="w-5 h-5" viewBox="0 0 24 24">
 								<path
@@ -66,12 +69,10 @@ function SignInContent() {
 							</svg>
 							Sign in with Google
 						</Button>
-						<p className={`${sarabun.className} text-center text-sm text-muted-foreground pt-2`}>
-							สำหรับนักศึกษา SKE มหาวิทยาลัยเกษตรศาสตร์
-						</p>
-						<p className="text-center text-xs text-muted-foreground">
-							Only <span className="font-semibold text-[#006837]">@ku.th</span> email addresses are
-							permitted to sign in.
+						<p className={`${sarabun.className} text-center text-xs text-muted-foreground`}>
+							เฉพาะอีเมล{' '}
+							<span className="font-semibold text-brand">@ku.th</span>{' '}
+							เท่านั้น
 						</p>
 					</CardContent>
 				</Card>

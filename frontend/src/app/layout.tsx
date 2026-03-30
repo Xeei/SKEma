@@ -7,6 +7,7 @@ import { Providers } from './providers';
 import { SessionProvider } from 'next-auth/react';
 import { Header } from '@/components/Header';
 import { TermsDialogButton } from '@/components/TermsDialog';
+import { Toaster } from '@/components/ui/sonner';
 
 const inter = Inter({
 	variable: '--font-inter',
@@ -40,9 +41,9 @@ export default function RootLayout({
 					<Providers>
 						<Header />
 
-						<div className="flex-1 bg-linear-to-br from-emerald-50 to-amber-50">{children}</div>
+						<div className="flex-1 bg-gray-100">{children}</div>
 
-						<footer className="bg-[#006837] text-white py-6">
+						<footer className="bg-brand text-white py-6">
 							<div className={`max-w-6xl mx-auto px-6 text-center ${sarabun.variable}`}>
 								{/* <p className="font-sarabun">คณะวิศวกรรมศาสตร์ มหาวิทยาลัยเกษตรศาสตร์</p>
 								<p className="text-emerald-200 text-sm mt-1">
@@ -69,6 +70,7 @@ export default function RootLayout({
 						</footer>
 					</Providers>
 				</SessionProvider>
+			<Toaster richColors position="top-right" />
 			</body>
 		</html>
 	);
