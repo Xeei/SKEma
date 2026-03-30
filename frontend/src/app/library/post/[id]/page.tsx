@@ -182,9 +182,7 @@ export default function PostDetailPage() {
 							Back
 						</Button>
 					</div>
-					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>
-						Post Not Found
-					</h1>
+					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>Post Not Found</h1>
 					<p className="text-muted-foreground mt-2">
 						The post you're looking for doesn't exist or you don't have permission to view it.
 					</p>
@@ -323,7 +321,10 @@ export default function PostDetailPage() {
 									</div>
 								);
 								return !isAnon ? (
-									<Link href={`/profile/${post.authorId}`} className="hover:text-brand transition-colors">
+									<Link
+										href={`/profile/${post.authorId}`}
+										className="hover:text-brand transition-colors"
+									>
 										{avatar}
 									</Link>
 								) : (
@@ -360,10 +361,6 @@ export default function PostDetailPage() {
 							</div>
 						)}
 					</CardHeader>
-				</Card>
-
-				{/* ZONE 2: Content */}
-				<Card>
 					<CardContent className="pt-6">
 						<div className="prose max-w-none bg-gray-50/60 rounded-xl p-4">
 							<div className="whitespace-pre-wrap text-base leading-relaxed">{post.content}</div>
