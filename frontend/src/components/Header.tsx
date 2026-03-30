@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,16 +19,8 @@ import { NotificationPanel } from '@/components/NotificationPanel';
 
 export function Header() {
 	const { data: session, status } = useSession();
-	const { unreadCount, notifications } = useNotifications();
+	const { unreadCount } = useNotifications();
 	const [panelOpen, setPanelOpen] = useState(false);
-
-	const isPrivileged = session?.role === 'ADMIN' || session?.role === 'TRUSTED';
-
-	// Count of unread "new pending post" notifications — used on the admin quick-link bell
-	const pendingUnread = useMemo(
-		() => notifications.filter((n) => n.type === 'NEW_POST_PENDING' && !n.isRead).length,
-		[notifications]
-	);
 
 	return (
 		<header className="bg-[#006837] text-white py-4 px-6 shadow-lg">

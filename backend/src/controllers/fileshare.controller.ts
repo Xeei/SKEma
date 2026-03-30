@@ -16,7 +16,7 @@ export const createFileShareController = async (
 			return res.status(400).json({ error: 'Missing required fields' });
 		const share = await createFileShare(fileId, userId);
 		res.status(201).json(share);
-	} catch (err) {
+	} catch (_err) {
 		res.status(500).json({ error: 'Failed to create file share' });
 	}
 };
@@ -29,7 +29,7 @@ export const getFileSharesByFileController = async (
 		const fileId = req.params.fileId as string;
 		const shares = await getFileSharesByFile(fileId);
 		res.json(shares);
-	} catch (err) {
+	} catch (_err) {
 		res.status(500).json({ error: 'Failed to get file shares' });
 	}
 };
@@ -42,7 +42,7 @@ export const getFileSharesByUserController = async (
 		const userId = req.params.userId as string;
 		const shares = await getFileSharesByUser(userId);
 		res.json(shares);
-	} catch (err) {
+	} catch (_err) {
 		res.status(500).json({ error: 'Failed to get file shares' });
 	}
 };
@@ -57,7 +57,7 @@ export const deleteFileShareController = async (
 		if (!share)
 			return res.status(404).json({ error: 'File share not found' });
 		res.json(share);
-	} catch (err) {
+	} catch (_err) {
 		res.status(500).json({ error: 'Failed to delete file share' });
 	}
 };

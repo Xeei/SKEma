@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
-import { authMiddleware } from './middleware/auth.middleware';
 import { initSocket } from './socket';
 
 import userRouter from './routes/user.route';
@@ -116,7 +115,7 @@ function configureRoutes(app: Express): void {
 			err: Error,
 			req: express.Request,
 			res: express.Response,
-			next: express.NextFunction
+			_next: express.NextFunction
 		) => {
 			console.error('Error:', err);
 			res.status(500).json({

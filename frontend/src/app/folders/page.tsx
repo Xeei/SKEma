@@ -43,8 +43,6 @@ export default function FoldersPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const totalSubjects = yearGroups.reduce((sum, g) => sum + g.subjects.length, 0);
-
 	useEffect(() => {
 		loadFolders();
 	}, []);
@@ -69,7 +67,7 @@ export default function FoldersPage() {
 
 			groups.sort((a, b) => a.yearFolder.name.localeCompare(b.yearFolder.name, 'th'));
 			setYearGroups(groups);
-		} catch (err) {
+		} catch {
 			setError('ไม่สามารถโหลดข้อมูลได้ กรุณาเข้าสู่ระบบก่อน');
 		} finally {
 			setLoading(false);

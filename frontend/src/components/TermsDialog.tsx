@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
 	Dialog,
@@ -83,7 +83,7 @@ function TermsDialogCore({ open, onOpenChange, blocking = false }: TermsDialogPr
 					</Section>
 
 					<Section title="7. การยอมรับข้อตกลง">
-						การกดปุ่ม "ยอมรับและเข้าใช้งาน" ถือว่าท่านได้อ่าน เข้าใจ
+						การกดปุ่ม &ldquo;ยอมรับและเข้าใช้งาน&rdquo; ถือว่าท่านได้อ่าน เข้าใจ
 						และยอมรับข้อตกลงการใช้งานทั้งหมดข้างต้นแล้ว หากไม่ยอมรับ
 						ท่านจะไม่สามารถใช้งานแพลตฟอร์มนี้ได้
 					</Section>
@@ -116,12 +116,7 @@ function TermsDialogCore({ open, onOpenChange, blocking = false }: TermsDialogPr
 
 /** Auto-shows on first visit (blocking until accepted). Place in root page. */
 export function TermsDialog() {
-	const [open, setOpen] = useState(false);
-
-	useEffect(() => {
-		const accepted = localStorage.getItem(STORAGE_KEY);
-		if (!accepted) setOpen(true);
-	}, []);
+	const [open, setOpen] = useState(() => !localStorage.getItem(STORAGE_KEY));
 
 	return <TermsDialogCore open={open} onOpenChange={setOpen} blocking />;
 }

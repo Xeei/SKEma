@@ -12,7 +12,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onUploadComplete }: FileUploadProps) {
-	const { data: session } = useSession();
+	useSession();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [uploading, setUploading] = useState(false);
 	const [progress, setProgress] = useState<UploadProgress | null>(null);
@@ -98,9 +98,9 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 					setSuccess(false);
 				}, 2000);
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Upload error:', err);
-			setError(err.response?.data?.error || 'Failed to upload file');
+			setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to upload file');
 			setProgress(null);
 		} finally {
 			setUploading(false);

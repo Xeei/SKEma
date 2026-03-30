@@ -291,6 +291,7 @@ export default function ProfilePage() {
 						{/* Avatar */}
 						<div className="relative shrink-0">
 							{isOwnProfile && session?.user?.image ? (
+								// eslint-disable-next-line @next/next/no-img-element
 								<img
 									src={session.user.image}
 									alt={displayName}

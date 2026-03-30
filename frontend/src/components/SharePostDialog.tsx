@@ -46,33 +46,6 @@ export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: Share
 	const { data: session } = useSession();
 	const [open, setOpen] = useState(false);
 	const [copied, setCopied] = useState(false);
-
-	const handleCopyLink = () => {
-		const url = `${window.location.origin}/library/post/${post.id}`;
-		navigator.clipboard.writeText(url).then(() => {
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		});
-	};
-
-	if (!isAuthor) {
-		return asMenuItem ? (
-			<span className="flex items-center gap-2 w-full" onClick={handleCopyLink}>
-				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
-				{copied ? 'Copied!' : 'Share Link'}
-			</span>
-		) : (
-			<Button
-				variant="outline"
-				size="sm"
-				className="flex items-center gap-2"
-				onClick={handleCopyLink}
-			>
-				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
-				{copied ? 'Copied!' : 'Share Link'}
-			</Button>
-		);
-	}
 	const [privacy, setPrivacy] = useState<Privacy>(post.privacy as Privacy);
 	const [search, setSearch] = useState('');
 	const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -86,17 +59,15 @@ export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: Share
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const searchRef = useRef<HTMLDivElement>(null);
 
-	// Load existing shares when dialog opens
-	useEffect(() => {
-		if (!open) return;
-		setPrivacy(post.privacy as Privacy);
-		setSearch('');
-		setSearchResults([]);
-		setShowResults(false);
-		loadShares();
-	}, [open, post.privacy, post.id]);
+	const handleCopyLink = () => {
+		const url = `${window.location.origin}/library/post/${post.id}`;
+		navigator.clipboard.writeText(url).then(() => {
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		});
+	};
 
-	const loadShares = async () => {
+	const loadShares = useCallback(async () => {
 		setLoadingShares(true);
 		try {
 			const data = await getPostSharesByPost(post.id);
@@ -106,7 +77,17 @@ export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: Share
 		} finally {
 			setLoadingShares(false);
 		}
-	};
+	}, [post.id]);
+
+	// Load existing shares when dialog opens
+	useEffect(() => {
+		if (!open) return;
+		setPrivacy(post.privacy as Privacy);
+		setSearch('');
+		setSearchResults([]);
+		setShowResults(false);
+		loadShares();
+	}, [open, post.privacy, post.id, loadShares]);
 
 	// Debounced search
 	useEffect(() => {
@@ -158,7 +139,7 @@ export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: Share
 				setSharingUserId(null);
 			}
 		},
-		[post.id, session?.userId]
+		[post.id, session?.userId, loadShares]
 	);
 
 	const handleRevoke = useCallback(
@@ -175,6 +156,25 @@ export function SharePostDialog({ post, onUpdated, asMenuItem, isAuthor }: Share
 		},
 		[post.id]
 	);
+
+	if (!isAuthor) {
+		return asMenuItem ? (
+			<span className="flex items-center gap-2 w-full" onClick={handleCopyLink}>
+				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
+				{copied ? 'Copied!' : 'Share Link'}
+			</span>
+		) : (
+			<Button
+				variant="outline"
+				size="sm"
+				className="flex items-center gap-2"
+				onClick={handleCopyLink}
+			>
+				{copied ? <Check className="w-4 h-4 text-green-600" /> : <Link className="w-4 h-4" />}
+				{copied ? 'Copied!' : 'Share Link'}
+			</Button>
+		);
+	}
 
 	const handleSave = async () => {
 		setSaving(true);

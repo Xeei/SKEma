@@ -24,9 +24,9 @@ export const createPostShareController = async (
 		}
 		const share = await createPostShare(postId, authorId, sharedUserId);
 		res.status(201).json(share);
-	} catch (err: any) {
+	} catch (err: unknown) {
 		// Unique constraint violation – already shared
-		if (err?.code === '23505') {
+		if ((err as { code?: string })?.code === '23505') {
 			return res
 				.status(409)
 				.json({ error: 'Post already shared with this user' });

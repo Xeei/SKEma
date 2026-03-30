@@ -241,7 +241,7 @@ export const updatePost = async (
 
 	// Build dynamic update query
 	const updates: string[] = [];
-	const values: any[] = [];
+	const values: (string | number | boolean | null | string[])[] = [];
 	let paramCount = 1;
 
 	if (title !== undefined) {
@@ -439,7 +439,7 @@ export const getPostsByFolder = async (
 
 		// Count
 		let countQuery: string;
-		let countParams: any[];
+		let countParams: (string | number | boolean | null)[];
 
 		if (searchParam) {
 			// $1=folderId, $2=userId, $3=searchParam
@@ -472,7 +472,7 @@ export const getPostsByFolder = async (
 		// Data
 		// Fixed tail: limit and offset are always the last two params.
 		let queryText: string;
-		let values: any[];
+		let values: (string | number | boolean | null | string[])[];
 
 		if (searchParam) {
 			// $1=folderId, $2=userId, $3=searchParam, $4=limit, $5=offset
@@ -527,7 +527,7 @@ export const getPostsByFolder = async (
 	} else {
 		// ── Unauthenticated path — PUBLIC posts only, no join needed ─────────
 		let countQuery: string;
-		let countParams: any[];
+		let countParams: (string | number | boolean | null)[];
 
 		if (searchParam) {
 			// $1=folderId, $2=searchParam
@@ -556,7 +556,7 @@ export const getPostsByFolder = async (
 		const total = countResult.rows[0].count;
 
 		let queryText: string;
-		let values: any[];
+		let values: (string | number | boolean | null)[];
 
 		if (searchParam) {
 			// $1=folderId, $2=searchParam, $3=limit, $4=offset
