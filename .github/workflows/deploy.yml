@@ -69,7 +69,7 @@ jobs:
 
       - name: Build and restart with Docker Compose
         run: |
-          docker rm -f skeschema-backend skeschema-frontend skema-db-1 skeschema-nginx 2>/dev/null || true
+          docker rm -f skeschema-backend skeschema-frontend skeschema-db skeschema-nginx 2>/dev/null || true
           docker compose down --remove-orphans
           docker compose up --build --force-recreate -d
 

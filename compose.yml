@@ -15,6 +15,7 @@ services:
 
     db:
         image: postgres:16
+        container_name: skeschema-db
         environment:
             POSTGRES_USER: ${POSTGRES_USER:-postgres}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -24,7 +25,7 @@ services:
         networks:
             - prisma-network
         volumes:
-            - ./postgres/data:/var/lib/postgresql/data
+            - postgres_data:/var/lib/postgresql/data
         env_file:
             - path: .env
               required: false
@@ -74,3 +75,6 @@ services:
 
 networks:
     prisma-network:
+
+volumes:
+    postgres_data:
