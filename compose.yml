@@ -25,7 +25,7 @@ services:
         networks:
             - prisma-network
         volumes:
-            - postgres_data:/var/lib/postgresql/data
+            - ./postgres/data:/var/lib/postgresql/data
         env_file:
             - path: .env
               required: false
