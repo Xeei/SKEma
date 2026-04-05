@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
+import logger, { morganStream } from './config/logger';
 import { initSocket } from './socket';
 
 import userRouter from './routes/user.route';
@@ -53,8 +54,8 @@ function configureMiddleware(app: Express): void {
 	// Cookie parser
 	app.use(cookieParser());
 
-	// Logging
-	app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
+	// HTTP request logging via winston
+	app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev', { stream: morganStream }));
 }
 
 /**
@@ -63,11 +64,10 @@ function configureMiddleware(app: Express): void {
 function configureRateLimit(): express.RequestHandler {
 	return rateLimit({
 		windowMs: 15 * 60 * 1000, // 15 minutes
-		max: 500, // Limit each IP to 500 requests per windowMs
+		max: 100, // 100 requests per IP per 15 minutes
 		standardHeaders: 'draft-7',
 		legacyHeaders: false,
-		message:
-			'Too many requests from this IP, please try again after 15 minutes',
+		message: 'Too many requests from this IP, please try again after 15 minutes',
 	});
 }
 
@@ -90,14 +90,14 @@ function configureRoutes(app: Express): void {
 	apiV1Router.use('/notifications', notificationRouter);
 	apiV1Router.use('/postshares', postshareRouter);
 	apiV1Router.use('/leaderboard', leaderboardRouter);
-	apiV1Router.use('/posts', postreportRouter);
+	apiV1Router.use('/reports', postreportRouter);
 	apiV1Router.use('/profile', profileRouter);
 
 	// Mount v1 API router
 	app.use('/api/v1', apiV1Router);
 
 	// Health check endpoint
-	app.get('/health', (req, res) => {
+	app.get('/health', (_req, res) => {
 		res.status(200).json({
 			status: 'ok',
 			timestamp: new Date().toISOString(),
@@ -105,7 +105,7 @@ function configureRoutes(app: Express): void {
 	});
 
 	// 404 handler
-	app.use((req, res) => {
+	app.use((_req, res) => {
 		res.status(404).json({ error: 'Not Found' });
 	});
 
@@ -113,16 +113,13 @@ function configureRoutes(app: Express): void {
 	app.use(
 		(
 			err: Error,
-			req: express.Request,
+			_req: express.Request,
 			res: express.Response,
 			_next: express.NextFunction
 		) => {
-			console.error('Error:', err);
+			logger.error(err.message, { stack: err.stack });
 			res.status(500).json({
-				error:
-					env.nodeEnv === 'production'
-						? 'Internal Server Error'
-						: err.message,
+				error: env.nodeEnv === 'production' ? 'Internal Server Error' : err.message,
 			});
 		}
 	);
@@ -133,8 +130,8 @@ function configureRoutes(app: Express): void {
  */
 function startServer(): void {
 	httpServer.listen(PORT, () => {
-		console.log(`🌐 Server running on http://localhost:${PORT}`);
-		console.log(`📝 Environment: ${env.nodeEnv}`);
+		logger.info(`Server running on http://localhost:${PORT}`);
+		logger.info(`Environment: ${env.nodeEnv}`);
 	});
 }
 

@@ -22,8 +22,10 @@ function AuthErrorContent() {
 		switch (error) {
 			case 'Configuration':
 				return 'There is a problem with the server configuration.';
+			case 'EmailNotAllowed':
+				return 'Access denied. Only @ku.th email addresses are allowed to sign in. If you need access, please contact the administrator.';
 			case 'AccessDenied':
-				return 'Access denied. Only @ku.th email addresses are allowed to sign in. If you believe you should have access, please contact the administrator.';
+				return 'Access denied. You do not have permission to sign in.';
 			case 'Verification':
 				return 'The verification token has expired or has already been used.';
 			case 'OAuthSignin':

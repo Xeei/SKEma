@@ -37,8 +37,7 @@ const handler = NextAuth({
 					.filter(Boolean);
 
 				if (!email.endsWith('@ku.th') && !allowedEmails.includes(email)) {
-					console.warn(`Sign-in blocked for non-KU email: ${email}`);
-					return false;
+					return '/auth/error?error=EmailNotAllowed';
 				}
 
 				try {
