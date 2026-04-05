@@ -17,6 +17,9 @@ jobs:
         working-directory: backend
 
     steps:
+      - name: Fix postgres data dir permissions
+        run: sudo rm -rf ${{ github.workspace }}/postgres/data
+
       - name: Checkout code
         uses: actions/checkout@v4
 
