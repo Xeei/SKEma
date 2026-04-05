@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Upload, X, FileIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { uploadFile, formatFileSize, UploadProgress } from '@/services/file.service';
+import { isAllowedFileType, ALLOWED_EXTENSIONS } from '@/lib/allowedFileTypes';
 
 interface FileUploadProps {
 	onUploadComplete?: () => void;
@@ -57,7 +58,10 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 	};
 
 	const handleFileSelect = (file: File) => {
-		// Validate file size (50MB max)
+		if (!isAllowedFileType(file)) {
+			setError(`File type not allowed: ${file.name}`);
+			return;
+		}
 		const maxSize = 50 * 1024 * 1024;
 		if (file.size > maxSize) {
 			setError('File size exceeds 50MB limit');
@@ -142,7 +146,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 						type="file"
 						onChange={handleFileInputChange}
 						className="hidden"
-						accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.jpg,.jpeg,.png,.gif,.webp,.txt"
+						accept={ALLOWED_EXTENSIONS}
 					/>
 
 					{!selectedFile ? (

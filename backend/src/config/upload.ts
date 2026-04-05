@@ -58,6 +58,9 @@ const fileFilter = (
 		// Assembly
 		'text/x-asm',
 		'text/x-assembler',
+		// XML
+		'application/xml',
+		'text/xml',
 	];
 
 	if (allowedMimes.includes(file.mimetype)) {
@@ -65,7 +68,7 @@ const fileFilter = (
 	} else {
 		cb(
 			new Error(
-				'Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, images, Python, CSV, C, and Assembly files are allowed.'
+				'Invalid file type. Only PDF, Word, Excel, PowerPoint, ZIP, images, Python, CSV, C, Assembly, and XML files are allowed.'
 			)
 		);
 	}

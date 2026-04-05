@@ -26,6 +26,7 @@ import { createPost, addFileToPost } from '@/services/post.service';
 import { uploadFile } from '@/services/file.service';
 import { Plus, X, FileIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAllowedFileType, ALLOWED_EXTENSIONS } from '@/lib/allowedFileTypes';
 
 interface CreatePostDialogProps {
 	onPostCreated?: () => void;
@@ -129,6 +130,12 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
 			const incoming = Array.from(e.target.files);
+			const invalid = incoming.filter((f) => !isAllowedFileType(f));
+			if (invalid.length > 0) {
+				toast.error(`ไฟล์ไม่รองรับ: ${invalid.map((f) => f.name).join(', ')}`);
+				e.target.value = '';
+				return;
+			}
 			setSelectedFiles((prev) => {
 				const existingNames = new Set(prev.map((f) => f.name));
 				const unique = incoming.filter((f) => !existingNames.has(f.name));
@@ -323,6 +330,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 										<input
 											type="file"
 											multiple
+											accept={ALLOWED_EXTENSIONS}
 											onChange={handleFileChange}
 											disabled={loading}
 											className="hidden"

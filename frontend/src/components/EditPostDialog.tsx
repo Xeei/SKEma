@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit, Plus, X, FileIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isAllowedFileType, ALLOWED_EXTENSIONS } from '@/lib/allowedFileTypes';
 import {
 	updatePost,
 	PostData,
@@ -87,6 +88,12 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 	const handleNewFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
 			const incoming = Array.from(e.target.files);
+			const invalid = incoming.filter((f) => !isAllowedFileType(f));
+			if (invalid.length > 0) {
+				toast.error(`ไฟล์ไม่รองรับ: ${invalid.map((f) => f.name).join(', ')}`);
+				e.target.value = '';
+				return;
+			}
 			setNewFiles((prev) => {
 				const existingNames = new Set(prev.map((f) => f.name));
 				const unique = incoming.filter((f) => !existingNames.has(f.name));
@@ -347,6 +354,7 @@ export function EditPostDialog({ post, onPostUpdated, asMenuItem = false }: Edit
 									<input
 										type="file"
 										multiple
+										accept={ALLOWED_EXTENSIONS}
 										onChange={handleNewFileChange}
 										disabled={loading}
 										className="hidden"
