@@ -69,7 +69,7 @@ export default function RootLayout({
 						</footer>
 					</Providers>
 				</SessionProvider>
-			<Toaster richColors position="top-right" />
+				<Toaster richColors position="top-right" />
 			</body>
 		</html>
 	);

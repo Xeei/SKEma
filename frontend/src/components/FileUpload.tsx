@@ -100,7 +100,10 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 			}
 		} catch (err: unknown) {
 			console.error('Upload error:', err);
-			setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to upload file');
+			setError(
+				(err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+					'Failed to upload file'
+			);
 			setProgress(null);
 		} finally {
 			setUploading(false);

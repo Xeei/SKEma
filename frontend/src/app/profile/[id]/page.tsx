@@ -4,14 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Sarabun } from 'next/font/google';
-import {
-	Eye,
-	ExternalLink,
-	Trash2,
-	FileText,
-	ThumbsUp,
-	ThumbsDown,
-} from 'lucide-react';
+import { Eye, ExternalLink, Trash2, FileText, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
 	getMyApprovedPostsPaginated,
@@ -135,7 +128,9 @@ function ActivityHeatmap({ data }: HeatmapProps) {
 													/>
 												</TooltipTrigger>
 												<TooltipContent side="top" className="text-xs">
-													<span className="font-semibold">{count} post{count !== 1 ? 's' : ''}</span>
+													<span className="font-semibold">
+														{count} post{count !== 1 ? 's' : ''}
+													</span>
 													{' on '}
 													{new Date(dateStr + 'T00:00:00').toLocaleDateString('en', {
 														month: 'short',
@@ -154,11 +149,15 @@ function ActivityHeatmap({ data }: HeatmapProps) {
 					{/* Legend */}
 					<div className="flex items-center gap-1 mt-2 ml-8">
 						<span className="text-[10px] text-gray-400 font-sarabun mr-1">Less</span>
-						{['bg-gray-100', 'bg-emerald-200', 'bg-emerald-300', 'bg-emerald-400', 'bg-emerald-500'].map(
-							(cls) => (
-								<div key={cls} className={`w-[12px] h-[12px] rounded-[2px] ${cls}`} />
-							)
-						)}
+						{[
+							'bg-gray-100',
+							'bg-emerald-200',
+							'bg-emerald-300',
+							'bg-emerald-400',
+							'bg-emerald-500',
+						].map((cls) => (
+							<div key={cls} className={`w-[12px] h-[12px] rounded-[2px] ${cls}`} />
+						))}
 						<span className="text-[10px] text-gray-400 font-sarabun ml-1">More</span>
 					</div>
 				</div>
@@ -259,7 +258,9 @@ export default function ProfilePage() {
 
 	if (profileError || !profile) {
 		return (
-			<main className={`${sarabun.variable} min-h-[calc(100vh-180px)] flex items-center justify-center`}>
+			<main
+				className={`${sarabun.variable} min-h-[calc(100vh-180px)] flex items-center justify-center`}
+			>
 				<p className="font-sarabun text-gray-500">ไม่พบผู้ใช้งานนี้</p>
 			</main>
 		);
@@ -268,13 +269,12 @@ export default function ProfilePage() {
 	const { user, stats, heatmap, mostUpvotedPost } = profile;
 
 	const displayName = user.name || 'ผู้ใช้งาน';
-	const initials =
-		(user.name || 'U')
-			.split(' ')
-			.map((n) => n[0])
-			.join('')
-			.slice(0, 2)
-			.toUpperCase();
+	const initials = (user.name || 'U')
+		.split(' ')
+		.map((n) => n[0])
+		.join('')
+		.slice(0, 2)
+		.toUpperCase();
 
 	const approvedCount = pagination?.total ?? 0;
 	const totalPages = pagination?.totalPages ?? 0;
@@ -325,14 +325,18 @@ export default function ProfilePage() {
 						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
 							<div className="flex items-center gap-1 mb-1">
 								<ThumbsUp className="w-3 h-3 text-white/60" />
-								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">อัปโหวต</p>
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">
+									อัปโหวต
+								</p>
 							</div>
 							<p className="font-sarabun text-2xl font-bold">{stats.totalUpvotes}</p>
 						</div>
 						<div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-3 border border-white/10">
 							<div className="flex items-center gap-1 mb-1">
 								<ThumbsDown className="w-3 h-3 text-white/60" />
-								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">ดาวน์โหวต</p>
+								<p className="font-sarabun text-white/60 text-xs uppercase tracking-wide">
+									ดาวน์โหวต
+								</p>
 							</div>
 							<p className="font-sarabun text-2xl font-bold">{stats.totalDownvotes}</p>
 						</div>
@@ -356,7 +360,9 @@ export default function ProfilePage() {
 								<p className="font-sarabun text-white/60 text-xs mb-0.5">
 									โพสต์ที่ได้รับอัปโหวตมากที่สุด
 								</p>
-								<p className="font-sarabun text-sm font-semibold truncate">{mostUpvotedPost.title}</p>
+								<p className="font-sarabun text-sm font-semibold truncate">
+									{mostUpvotedPost.title}
+								</p>
 							</div>
 							<span className="font-sarabun text-emerald-300 font-bold text-sm shrink-0">
 								{mostUpvotedPost.upvotes} ▲

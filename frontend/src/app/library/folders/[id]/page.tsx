@@ -342,15 +342,15 @@ export default function FolderDetailPage() {
 								icon={FolderOpen}
 								title={debouncedSearch ? 'ไม่พบรายการที่ค้นหา' : 'โฟลเดอร์นี้ยังว่างเปล่า'}
 								description={
-									debouncedSearch
-										? 'ลองเปลี่ยนคำค้นหาใหม่'
-										: 'ยังไม่มีโพสต์หรือไฟล์ในโฟลเดอร์นี้'
+									debouncedSearch ? 'ลองเปลี่ยนคำค้นหาใหม่' : 'ยังไม่มีโพสต์หรือไฟล์ในโฟลเดอร์นี้'
 								}
 							/>
 						)}
 
 						{hasResults && (
-							<div className={`divide-y divide-gray-50 transition-opacity duration-150 ${searching ? 'opacity-50' : 'opacity-100'}overflow-auto`}>
+							<div
+								className={`divide-y divide-gray-50 transition-opacity duration-150 ${searching ? 'opacity-50' : 'opacity-100'}overflow-auto`}
+							>
 								{/* ── Subfolders (only on first posts page, or while searching) ── */}
 								{(postsPage === 1 || !!debouncedSearch) &&
 									subfolders.map((subfolder) => (

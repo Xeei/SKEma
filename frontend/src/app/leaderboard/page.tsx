@@ -121,7 +121,11 @@ export default function LeaderboardPage() {
 				{loading && (
 					<div className="space-y-8">
 						<div className="flex items-end justify-center gap-4">
-							{[{ h: 'h-24', a: 'w-12 h-12' }, { h: 'h-36', a: 'w-16 h-16' }, { h: 'h-20', a: 'w-12 h-12' }].map((s, i) => (
+							{[
+								{ h: 'h-24', a: 'w-12 h-12' },
+								{ h: 'h-36', a: 'w-16 h-16' },
+								{ h: 'h-20', a: 'w-12 h-12' },
+							].map((s, i) => (
 								<div key={i} className="flex flex-col items-center gap-2">
 									<Skeleton className={`${s.a} rounded-full`} />
 									<Skeleton className={`${s.h} w-28 rounded-t-xl`} />

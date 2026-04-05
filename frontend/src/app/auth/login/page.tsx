@@ -70,9 +70,7 @@ function SignInContent() {
 							Sign in with Google
 						</Button>
 						<p className={`${sarabun.className} text-center text-xs text-muted-foreground`}>
-							เฉพาะอีเมล{' '}
-							<span className="font-semibold text-brand">@ku.th</span>{' '}
-							เท่านั้น
+							เฉพาะอีเมล <span className="font-semibold text-brand">@ku.th</span> เท่านั้น
 						</p>
 					</CardContent>
 				</Card>

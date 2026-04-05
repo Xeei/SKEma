@@ -184,7 +184,8 @@ export default function PostDetailPage() {
 					</div>
 					<h1 className={`${sarabun.className} text-3xl font-bold text-brand`}>Post Not Found</h1>
 					<p className="text-muted-foreground mt-2">
-						The post you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
+						The post you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to
+						view it.
 					</p>
 				</div>
 			</main>

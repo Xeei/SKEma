@@ -205,8 +205,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 							))}
 						</div>
 						<p className="text-xs text-muted-foreground text-center">
-							ขั้นตอนที่ {step} จาก 2 —{' '}
-							{step === 1 ? 'รายละเอียดโพสต์' : 'ไฟล์แนบและยืนยัน'}
+							ขั้นตอนที่ {step} จาก 2 — {step === 1 ? 'รายละเอียดโพสต์' : 'ไฟล์แนบและยืนยัน'}
 						</p>
 					</div>
 
@@ -225,9 +224,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 										onChange={(e) => setTitle(e.target.value)}
 										disabled={loading}
 									/>
-									{titleError && (
-										<p className="text-xs text-red-500 mt-1">{titleError}</p>
-									)}
+									{titleError && <p className="text-xs text-red-500 mt-1">{titleError}</p>}
 								</div>
 
 								<div>
@@ -264,9 +261,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 										rows={8}
 										className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
 									/>
-									{contentError && (
-										<p className="text-xs text-red-500 mt-1">{contentError}</p>
-									)}
+									{contentError && <p className="text-xs text-red-500 mt-1">{contentError}</p>}
 								</div>
 
 								<div className="flex items-center gap-2">
@@ -370,11 +365,7 @@ export function CreatePostDialog({ onPostCreated, folderId }: CreatePostDialogPr
 									>
 										← ย้อนกลับ
 									</Button>
-									<Button
-										type="submit"
-										className="bg-brand hover:bg-brand-dark"
-										disabled={loading}
-									>
+									<Button type="submit" className="bg-brand hover:bg-brand-dark" disabled={loading}>
 										{loading ? 'Submitting...' : isStandard ? 'Create Post' : 'Create Post'}
 									</Button>
 								</DialogFooter>
