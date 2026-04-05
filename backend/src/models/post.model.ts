@@ -522,7 +522,14 @@ export const getPostsByFolder = async (
 
 		return {
 			data: result.rows,
-			pagination: { total, page, limit, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
+			pagination: {
+				total,
+				page,
+				limit,
+				totalPages,
+				hasNext: page < totalPages,
+				hasPrev: page > 1,
+			},
 		};
 	} else {
 		// ── Unauthenticated path — PUBLIC posts only, no join needed ─────────
@@ -604,7 +611,14 @@ export const getPostsByFolder = async (
 
 		return {
 			data: result.rows,
-			pagination: { total, page, limit, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
+			pagination: {
+				total,
+				page,
+				limit,
+				totalPages,
+				hasNext: page < totalPages,
+				hasPrev: page > 1,
+			},
 		};
 	}
 };

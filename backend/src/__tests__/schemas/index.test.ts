@@ -17,7 +17,10 @@ describe('paginationSchema', () => {
 		});
 
 		it('parses string numbers into integers', () => {
-			const result = paginationSchema.safeParse({ page: '3', limit: '25' });
+			const result = paginationSchema.safeParse({
+				page: '3',
+				limit: '25',
+			});
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.data).toEqual({ page: 3, limit: 25 });
@@ -25,7 +28,10 @@ describe('paginationSchema', () => {
 		});
 
 		it('accepts the minimum valid values (page=1, limit=1)', () => {
-			const result = paginationSchema.safeParse({ page: '1', limit: '1' });
+			const result = paginationSchema.safeParse({
+				page: '1',
+				limit: '1',
+			});
 			expect(result.success).toBe(true);
 		});
 
@@ -101,7 +107,10 @@ describe('createPostSchema', () => {
 		});
 
 		it('accepts SHARED as a valid privacy value', () => {
-			const result = createPostSchema.safeParse({ ...minimalValid, privacy: 'SHARED' });
+			const result = createPostSchema.safeParse({
+				...minimalValid,
+				privacy: 'SHARED',
+			});
 			expect(result.success).toBe(true);
 		});
 
@@ -118,19 +127,27 @@ describe('createPostSchema', () => {
 
 		it('accepts up to 20 tags', () => {
 			const tags = Array.from({ length: 20 }, (_, i) => `tag${i}`);
-			const result = createPostSchema.safeParse({ ...minimalValid, tags });
+			const result = createPostSchema.safeParse({
+				...minimalValid,
+				tags,
+			});
 			expect(result.success).toBe(true);
 		});
 	});
 
 	describe('invalid inputs', () => {
 		it('fails when title is missing', () => {
-			const result = createPostSchema.safeParse({ content: 'Some content' });
+			const result = createPostSchema.safeParse({
+				content: 'Some content',
+			});
 			expect(result.success).toBe(false);
 		});
 
 		it('fails when title is empty string', () => {
-			const result = createPostSchema.safeParse({ ...minimalValid, title: '' });
+			const result = createPostSchema.safeParse({
+				...minimalValid,
+				title: '',
+			});
 			expect(result.success).toBe(false);
 		});
 
@@ -148,7 +165,10 @@ describe('createPostSchema', () => {
 		});
 
 		it('fails when content is empty string', () => {
-			const result = createPostSchema.safeParse({ ...minimalValid, content: '' });
+			const result = createPostSchema.safeParse({
+				...minimalValid,
+				content: '',
+			});
 			expect(result.success).toBe(false);
 		});
 
@@ -178,7 +198,10 @@ describe('createPostSchema', () => {
 
 		it('fails when tags array exceeds 20 items', () => {
 			const tags = Array.from({ length: 21 }, (_, i) => `tag${i}`);
-			const result = createPostSchema.safeParse({ ...minimalValid, tags });
+			const result = createPostSchema.safeParse({
+				...minimalValid,
+				tags,
+			});
 			expect(result.success).toBe(false);
 		});
 
@@ -220,7 +243,9 @@ describe('createFolderSchema', () => {
 		});
 
 		it('accepts a name at the maximum length (200 chars)', () => {
-			const result = createFolderSchema.safeParse({ name: 'a'.repeat(200) });
+			const result = createFolderSchema.safeParse({
+				name: 'a'.repeat(200),
+			});
 			expect(result.success).toBe(true);
 		});
 	});
@@ -237,7 +262,9 @@ describe('createFolderSchema', () => {
 		});
 
 		it('fails when name exceeds 200 characters', () => {
-			const result = createFolderSchema.safeParse({ name: 'a'.repeat(201) });
+			const result = createFolderSchema.safeParse({
+				name: 'a'.repeat(201),
+			});
 			expect(result.success).toBe(false);
 		});
 

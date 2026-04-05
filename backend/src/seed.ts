@@ -39,7 +39,9 @@ async function main() {
 			});
 			console.log(`Created folder: ${created.name} (${created.id})`);
 		} else {
-			console.log(`Folder already exists: ${existing.name} (${existing.id})`);
+			console.log(
+				`Folder already exists: ${existing.name} (${existing.id})`
+			);
 		}
 	}
 

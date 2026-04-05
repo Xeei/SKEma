@@ -16,11 +16,9 @@ export const createPostShareController = async (
 	try {
 		const { postId, authorId, sharedUserId } = req.body;
 		if (!postId || !authorId || !sharedUserId) {
-			return res
-				.status(400)
-				.json({
-					error: 'Missing required fields: postId, authorId, sharedUserId',
-				});
+			return res.status(400).json({
+				error: 'Missing required fields: postId, authorId, sharedUserId',
+			});
 		}
 		const share = await createPostShare(postId, authorId, sharedUserId);
 		res.status(201).json(share);
@@ -66,8 +64,8 @@ export const getPostSharesByUserController = async (
 // GET /postshares/check/:postId/:sharedUserId  – check if a post is shared with a user
 export const checkPostShareController = async (req: Request, res: Response) => {
 	try {
-        const postId = req.params.postId as string
-        const sharedUserId = req.params.sharedUserId as string
+		const postId = req.params.postId as string;
+		const sharedUserId = req.params.sharedUserId as string;
 		const shared = await isPostSharedWithUser(postId, sharedUserId);
 		res.json({ shared });
 	} catch {
@@ -100,11 +98,9 @@ export const revokePostShareController = async (
 	try {
 		const { postId, sharedUserId } = req.body;
 		if (!postId || !sharedUserId) {
-			return res
-				.status(400)
-				.json({
-					error: 'Missing required fields: postId, sharedUserId',
-				});
+			return res.status(400).json({
+				error: 'Missing required fields: postId, sharedUserId',
+			});
 		}
 		const share = await revokePostShare(postId, sharedUserId);
 		if (!share) {

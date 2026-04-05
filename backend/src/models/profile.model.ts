@@ -17,7 +17,9 @@ export interface PublicProfile {
 	mostUpvotedPost: { id: string; title: string; upvotes: number } | null;
 }
 
-export const getPublicProfile = async (userId: string): Promise<PublicProfile | null> => {
+export const getPublicProfile = async (
+	userId: string
+): Promise<PublicProfile | null> => {
 	const pool: Pool = await getDbConnection();
 
 	// Check user exists

@@ -15,7 +15,11 @@ function buildReq(authHeader?: string): Partial<Request> {
 	};
 }
 
-function buildRes(): { res: Partial<Response>; json: jest.Mock; status: jest.Mock } {
+function buildRes(): {
+	res: Partial<Response>;
+	json: jest.Mock;
+	status: jest.Mock;
+} {
 	const json = jest.fn().mockReturnThis();
 	const status = jest.fn().mockReturnValue({ json });
 	const res = { status } as unknown as Partial<Response>;
@@ -56,7 +60,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(401);
-		expect(json).toHaveBeenCalledWith({ error: 'Unauthorized - No token provided' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Unauthorized - No token provided',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -68,7 +74,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(401);
-		expect(json).toHaveBeenCalledWith({ error: 'Unauthorized - No token provided' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Unauthorized - No token provided',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -84,7 +92,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(500);
-		expect(json).toHaveBeenCalledWith({ error: 'Server configuration error' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Server configuration error',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -102,7 +112,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(401);
-		expect(json).toHaveBeenCalledWith({ error: 'Unauthorized - Invalid token' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Unauthorized - Invalid token',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -117,7 +129,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(401);
-		expect(json).toHaveBeenCalledWith({ error: 'Unauthorized - Invalid token' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Unauthorized - Invalid token',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -135,7 +149,9 @@ describe('authMiddleware', () => {
 		await authMiddleware(req, res as Response, next);
 
 		expect(status).toHaveBeenCalledWith(401);
-		expect(json).toHaveBeenCalledWith({ error: 'Unauthorized - Token expired' });
+		expect(json).toHaveBeenCalledWith({
+			error: 'Unauthorized - Token expired',
+		});
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -160,7 +176,10 @@ describe('authMiddleware', () => {
 	});
 
 	it('attaches req.user with optional fields undefined when not in token', async () => {
-		const minimalPayload = { sub: 'user-456', email: 'minimal@example.com' };
+		const minimalPayload = {
+			sub: 'user-456',
+			email: 'minimal@example.com',
+		};
 		(mockedJwt.verify as jest.Mock).mockReturnValue(minimalPayload);
 
 		const req = buildReq('Bearer minimal.jwt.token') as Request;
@@ -187,6 +206,9 @@ describe('authMiddleware', () => {
 
 		await authMiddleware(req, res as Response, next);
 
-		expect(mockedJwt.verify).toHaveBeenCalledWith('my.exact.token', VALID_SECRET);
+		expect(mockedJwt.verify).toHaveBeenCalledWith(
+			'my.exact.token',
+			VALID_SECRET
+		);
 	});
 });

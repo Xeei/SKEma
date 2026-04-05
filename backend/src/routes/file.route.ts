@@ -16,7 +16,13 @@ import {
 const router = express.Router();
 
 // Upload file (requires authentication)
-router.post('/', authMiddleware, upload.single('file'), validateBody(uploadFileBodySchema), uploadFileController);
+router.post(
+	'/',
+	authMiddleware,
+	upload.single('file'),
+	validateBody(uploadFileBodySchema),
+	uploadFileController
+);
 
 // Get all files
 router.get('/', getAllFilesController);
@@ -33,6 +39,6 @@ router.get('/:id/download', downloadFileController);
 // Delete file (requires authentication and ownership)
 router.delete('/:id', authMiddleware, deleteFileController);
 
-router.get('/folders/:id', authMiddleware, getFilesByFolder)
+router.get('/folders/:id', authMiddleware, getFilesByFolder);
 
 export default router;
