@@ -55,7 +55,11 @@ function configureMiddleware(app: Express): void {
 	app.use(cookieParser());
 
 	// HTTP request logging via winston
-	app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev', { stream: morganStream }));
+	app.use(
+		morgan(env.nodeEnv === 'production' ? 'combined' : 'dev', {
+			stream: morganStream,
+		})
+	);
 }
 
 /**
@@ -67,7 +71,8 @@ function configureRateLimit(): express.RequestHandler {
 		max: 100, // 100 requests per IP per 15 minutes
 		standardHeaders: 'draft-7',
 		legacyHeaders: false,
-		message: 'Too many requests from this IP, please try again after 15 minutes',
+		message:
+			'Too many requests from this IP, please try again after 15 minutes',
 	});
 }
 
@@ -119,7 +124,10 @@ function configureRoutes(app: Express): void {
 		) => {
 			logger.error(err.message, { stack: err.stack });
 			res.status(500).json({
-				error: env.nodeEnv === 'production' ? 'Internal Server Error' : err.message,
+				error:
+					env.nodeEnv === 'production'
+						? 'Internal Server Error'
+						: err.message,
 			});
 		}
 	);

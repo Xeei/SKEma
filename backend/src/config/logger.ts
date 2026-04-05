@@ -8,11 +8,17 @@ const devFormat = combine(
 	timestamp({ format: 'HH:mm:ss' }),
 	errors({ stack: true }),
 	printf(({ timestamp, level, message, stack }) =>
-		stack ? `${timestamp} [${level}] ${message}\n${stack}` : `${timestamp} [${level}] ${message}`
+		stack
+			? `${timestamp} [${level}] ${message}\n${stack}`
+			: `${timestamp} [${level}] ${message}`
 	)
 );
 
-const prodFormat = combine(timestamp(), errors({ stack: true }), winston.format.json());
+const prodFormat = combine(
+	timestamp(),
+	errors({ stack: true }),
+	winston.format.json()
+);
 
 const logger = winston.createLogger({
 	level: env.nodeEnv === 'production' ? 'http' : 'debug',
@@ -21,8 +27,13 @@ const logger = winston.createLogger({
 		new winston.transports.Console(),
 		...(env.nodeEnv === 'production'
 			? [
-					new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-					new winston.transports.File({ filename: 'logs/combined.log' }),
+					new winston.transports.File({
+						filename: 'logs/error.log',
+						level: 'error',
+					}),
+					new winston.transports.File({
+						filename: 'logs/combined.log',
+					}),
 				]
 			: []),
 	],

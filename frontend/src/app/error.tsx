@@ -43,11 +43,7 @@ export default function Error({
 								{error.message || 'An unexpected error occurred. Please try again.'}
 							</p>
 						</div>
-						<Button
-							onClick={reset}
-							size="lg"
-							className="w-full bg-[#006837] hover:bg-[#005530]"
-						>
+						<Button onClick={reset} size="lg" className="w-full bg-[#006837] hover:bg-[#005530]">
 							Try Again
 						</Button>
 						<Button
