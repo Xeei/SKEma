@@ -22,6 +22,8 @@ function AuthErrorContent() {
 		switch (error) {
 			case 'Configuration':
 				return 'There is a problem with the server configuration.';
+			case 'ServerError':
+				return 'Could not connect to the server during sign in. Please try again in a moment.';
 			case 'EmailNotAllowed':
 				return 'Access denied. Only @ku.th email addresses are allowed to sign in. If you need access, please contact the administrator.';
 			case 'AccessDenied':

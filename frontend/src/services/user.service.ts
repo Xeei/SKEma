@@ -8,7 +8,7 @@ const instance = axios.create({
 
 // Server-side instance (uses direct backend URL)
 const getServerInstance = () => {
-	const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+	const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 	return axios.create({
 		baseURL: `${backendUrl}/api/v1/user`,
 	});

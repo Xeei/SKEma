@@ -56,7 +56,7 @@ const handler = NextAuth({
 					return true;
 				} catch (error) {
 					console.error('Error during sign in:', error);
-					return false;
+					return '/auth/error?error=ServerError';
 				}
 			}
 			return true;
@@ -64,7 +64,7 @@ const handler = NextAuth({
 		async jwt({ token, user, account }) {
 			// Initial sign in - generate a JWT for backend auth and fetch userId
 			if (account && user && user.email) {
-				const dbUser = await getUserByEmail(user.email);
+				const dbUser = await getUserByEmail(user.email).catch(() => null);
 				const userId = dbUser?.id || user.id || token.sub;
 				const role = dbUser?.role || user.role || undefined;
 
